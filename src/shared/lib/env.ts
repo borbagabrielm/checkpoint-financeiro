@@ -1,9 +1,8 @@
-// Validação de variáveis de ambiente em tempo de build/inicialização
-// Falha com mensagem clara em vez de erros crípticos em runtime
+/// <reference types="vite/client" />
 
 const required = {
-  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL as string | undefined,
+  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined,
 } as const
 
 const missing = Object.entries(required)
@@ -14,8 +13,7 @@ if (missing.length > 0) {
   throw new Error(
     `[Checkpoint Financeiro] Variáveis de ambiente obrigatórias não encontradas:\n` +
     missing.map((k) => `  • ${k}`).join('\n') +
-    `\n\nCrie um arquivo .env na raiz do projeto com essas variáveis.\n` +
-    `Consulte o .env.example para referência.`
+    `\n\nCrie um arquivo .env na raiz do projeto com essas variáveis.`
   )
 }
 

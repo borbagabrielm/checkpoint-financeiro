@@ -20,7 +20,7 @@ export function parseOFX(content: string): ParseResult {
   const text = content.replace(/\r\n/g, '\n').replace(/^\uFEFF/, '').trim()
 
   // Extrai blocos de transação
-  const blocks = text.match(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi) ?? []
+  const blocks: string[] = text.match(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi) ?? []
 
   if (!blocks.length) {
     // Tenta formato OFX sem tags de fechamento (SGML puro)

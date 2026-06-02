@@ -77,7 +77,7 @@ export default function FriendProfilePage() {
 
       const normalize = (rows: typeof sent, dir: 'sent' | 'received'): SharedTx[] =>
         (rows ?? []).map((row) => {
-          const tx = row.transaction as { description: string; date: string; amount: number; category: string }
+          const tx = (row.transaction as unknown) as { description: string; date: string; amount: number; category: string }
           return {
             id: row.id,
             transaction_id: row.transaction_id,

@@ -40,8 +40,9 @@ async function enrichSharedRows(rows: Record<string, unknown>[]): Promise<Shared
         ...tx,
         type: (tx.type === 'credit' ? 'income' : 'expense') as 'income' | 'expense',
         updated_at: '',
+        created_at: '',
       } : null as unknown as SharedTransactionWithDetails['transaction'],
-      sender_profile: profile ?? null as unknown as SharedTransactionWithDetails['sender_profile'],
+      sender_profile: profile ? { ...profile, id: '', bio: null, created_at: '', updated_at: '' } as unknown as SharedTransactionWithDetails['sender_profile'] : null as unknown as SharedTransactionWithDetails['sender_profile'],
     }
   })
   return result

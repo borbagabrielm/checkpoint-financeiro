@@ -14,7 +14,7 @@ const steps = ['Boas-vindas', 'Primeira transação', 'Pronto!'] as const
 
 const txSchema = z.object({
   description: z.string().min(1),
-  amount: z.coerce.number().positive(),
+  amount: z.coerce.number().min(0.01, 'Valor obrigatório'),
   type: z.enum(['income', 'expense']),
   category: z.string().min(1),
   payment_method: z.string().nullable(),
@@ -36,7 +36,7 @@ export function Onboarding({ onComplete, userId }: Props) {
     resolver: zodResolver(txSchema),
     defaultValues: {
       description: '',
-      amount: undefined,
+      amount: 0,
       type: 'expense' as const,
       category: '',
       payment_method: null,

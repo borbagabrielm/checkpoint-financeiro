@@ -6,7 +6,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle
 } from '@/shared/components/ui/feedback'
 import { Skeleton } from '@/shared/components/ui/display'
-import { formatCurrency, getMonthLabel, getCurrentMonthKey } from '@/shared/lib/utils'
+import { formatCurrency, getMonthLabel, getCurrentMonthKey, cn } from '@/shared/lib/utils'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { TransactionForm } from '@/features/transactions/components/TransactionForm'
 import { TransactionList } from '@/features/transactions/components/TransactionList'

@@ -57,7 +57,7 @@ export function useNotifications() {
 
       // 2. Busca perfis dos remetentes em uma única query
       const senderIds = [...new Set(rows.map((r) => {
-        const tx = r.transaction as { user_id: string } | null
+        const tx = (r.transaction as unknown) as { user_id: string } | null
         return tx?.user_id
       }).filter(Boolean))] as string[]
 
@@ -69,7 +69,7 @@ export function useNotifications() {
       const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]))
 
       return rows.map((r) => {
-        const tx = r.transaction as { description: string; user_id: string } | null
+        const tx = (r.transaction as unknown) as { description: string; user_id: string } | null
         const profile = profileMap.get(tx?.user_id ?? '')
         return {
           id: r.id,
