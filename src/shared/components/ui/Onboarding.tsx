@@ -204,8 +204,8 @@ export function Onboarding({ onComplete, userId }: Props) {
                 <div className="space-y-1.5">
                   <Label>Nome de exibição</Label>
                   <Input {...profileForm.register('display_name')} placeholder="Seu nome completo" autoFocus />
-                  {profileForm.formState.errors.display_name && (
-                    <p className="text-xs text-destructive">{profileForm.formState.errors.display_name.message}</p>
+                  {profileForm.formState.errors.display_name?.message && (
+                    <p className="text-xs text-destructive">{String(profileForm.formState.errors.display_name.message)}</p>
                   )}
                 </div>
                 <div className="space-y-1.5">
@@ -214,8 +214,8 @@ export function Onboarding({ onComplete, userId }: Props) {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
                     <Input {...profileForm.register('username')} className="pl-7" placeholder="seu_usuario" />
                   </div>
-                  {profileForm.formState.errors.username && (
-                    <p className="text-xs text-destructive">{profileForm.formState.errors.username.message}</p>
+                  {profileForm.formState.errors.username?.message && (
+                    <p className="text-xs text-destructive">{String(profileForm.formState.errors.username.message)}</p>
                   )}
                 </div>
 
