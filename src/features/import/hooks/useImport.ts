@@ -7,6 +7,9 @@ import {
   hashFile, checkDuplicate, saveImportSession,
 } from '../services/importSessionService'
 import type { BankId, ImportFormat, ImportedTransaction, ParseResult } from '../types'
+import {
+  categorizeWithAI, loadUserMappings, learnFromCorrection,
+} from '../services/aiCategorizationService'
 
 type ImportStep = 'select' | 'naming' | 'review' | 'importing' | 'done'
 
@@ -33,6 +36,8 @@ export function useImport() {
   const [failedItems, setFailedItems] = useState<FailedImport[]>([])
   const [error, setError] = useState<string | null>(null)
   const [duplicateSession, setDuplicateSession] = useState<{ name: string; date: string } | null>(null)
+  const [isCategorizingAI, setIsCategorizingAI] = useState(false)
+  const [aiCategorized, setAiCategorized] = useState(false)
 
   // ── Parse do arquivo ──────────────────────────────────────
   const handleFile = async (file: File, selectedBankId: BankId) => {
@@ -102,6 +107,32 @@ export function useImport() {
     setStep('review')
   }
 
+  // ── Categorizar com IA ───────────────────────────────────
+  const categorizeWithAIAction = async () => {
+    if (!user?.id || !transactions.length) return
+    setIsCategorizingAI(true)
+    try {
+      const userMappings = loadUserMappings(user.id)
+      const toCateg = transactions
+        .filter((t) => t.type === 'expense' && !t.skip)
+        .map((t) => ({ id: t.id, description: t.description }))
+
+      const results = await categorizeWithAI(toCateg, preferences.categories, userMappings)
+      const resultMap = new Map(results.map((r) => [r.id, r]))
+
+      setTransactions((prev) => prev.map((t) => {
+        const r = resultMap.get(t.id)
+        if (r?.category) return { ...t, category: r.category }
+        return t
+      }))
+      setAiCategorized(true)
+    } catch (e) {
+      console.error('AI categorization failed:', e)
+    } finally {
+      setIsCategorizingAI(false)
+    }
+  }
+
   // ── Atualizar transação na revisão ────────────────────────
   const updateTransaction = (id: string, updates: Partial<ImportedTransaction>) => {
     setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)))
@@ -164,6 +195,15 @@ export function useImport() {
       }
     }
 
+    // Aprender com as categorias finais (salva mapeamentos para uso futuro)
+    if (user?.id) {
+      for (const tx of toImport) {
+        if (tx.category) {
+          learnFromCorrection(user.id, tx.description, tx.category)
+        }
+      }
+    }
+
     // Salvar sessão no histórico
     if (user?.id) {
       await saveImportSession({
@@ -195,6 +235,7 @@ export function useImport() {
 
   return {
     step, bankId, format, importName, setImportName,
+    isCategorizingAI, aiCategorized, categorizeWithAIAction,
     parseResult, transactions, importing, importedCount,
     failedItems, error, duplicateSession,
     toImportCount, skippedCount,

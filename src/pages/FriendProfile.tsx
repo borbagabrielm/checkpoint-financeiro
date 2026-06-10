@@ -162,6 +162,24 @@ export default function FriendProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Ação de cobrar */}
+      {balance > 0 && (
+        <button
+          onClick={() => {
+            const msg = `Oi! Pelo Checkpoint Financeiro, você tem um saldo de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)} comigo. Poderia acertar? 😊`
+            if (navigator.share) {
+              navigator.share({ text: msg }).catch(() => {})
+            } else {
+              navigator.clipboard.writeText(msg)
+              import('sonner').then(({ toast }) => toast.success('Mensagem copiada!'))
+            }
+          }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[hsl(var(--income)/0.1)] border border-[hsl(var(--income)/0.3)] text-[hsl(var(--income))] text-sm font-medium hover:bg-[hsl(var(--income)/0.15)] transition-colors"
+        >
+          💬 Cobrar {profile?.display_name ?? 'amigo'} via mensagem
+        </button>
+      )}
+
       {/* Big numbers */}
       <div className="grid grid-cols-3 gap-3">
         <div className="stat-card">

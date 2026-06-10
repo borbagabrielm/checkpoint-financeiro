@@ -6,6 +6,9 @@ import { useEffect, useRef, useState } from 'react'
 import { AuthProvider, useAuth } from '@/shared/hooks/useAuth'
 import { AppShell } from '@/shared/components/layout/AppShell'
 import { Toaster } from '@/shared/components/ui/feedback'
+import { ErrorBoundary } from '@/shared/components/ui/ErrorBoundary'
+import { OfflineBanner } from '@/shared/hooks/useOnlineStatus'
+import { usePWA } from '@/shared/hooks/usePWA'
 import { Onboarding } from '@/shared/components/ui/Onboarding'
 import { useRecurringRunner } from '@/features/recurring/hooks/useRecurringRunner'
 
@@ -19,6 +22,7 @@ import SettingsPage from '@/pages/Settings'
 import ProfilePage from '@/pages/Profile'
 import ImportPage from '@/features/import/components/ImportPage'
 import FriendProfilePage from '@/pages/FriendProfile'
+import InvitePage from '@/pages/InvitePage'
 import GoalsPage from '@/pages/Goals'
 import SearchPage from '@/pages/SearchPage'
 
@@ -88,6 +92,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/invite/:userId" element={<InvitePage />} />
       <Route
         path="/*"
         element={
@@ -115,9 +120,17 @@ function AppRoutes() {
 }
 
 // ─── Root App ─────────────────────────────────────────────────
+function PWAInit() {
+  usePWA() // registra SW e captura evento de instalação
+  return null
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <PWAInit />
+      <OfflineBanner />
+      <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
           <CacheCleaner />
@@ -125,6 +138,7 @@ export default function App() {
           <Toaster />
         </AuthProvider>
       </BrowserRouter>
+      </ErrorBoundary>
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, UserPlus, UserCheck, UserX, Eye, Clock } from 'lucide-react'
+import { Search, UserPlus, UserCheck, UserX, Eye, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/shared/components/ui/button'
@@ -35,11 +35,27 @@ export default function SocialPage() {
     }
   }
 
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/invite/${user!.id}`
+    if (navigator.share) {
+      navigator.share({ title: 'Checkpoint Financeiro', text: 'Me adicione no Checkpoint Financeiro!', url: link })
+    } else {
+      navigator.clipboard.writeText(link)
+      toast.success('Link copiado! Compartilhe com seus amigos.')
+    }
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Amigos</h1>
-        <p className="page-subtitle">Gerencie suas conexões e despesas compartilhadas</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="page-header">
+          <h1 className="page-title">Amigos</h1>
+          <p className="page-subtitle">Gerencie suas conexões e despesas compartilhadas</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={copyInviteLink} className="shrink-0">
+          <Link2 className="h-4 w-4" />
+          Convidar
+        </Button>
       </div>
 
       {/* Search */}

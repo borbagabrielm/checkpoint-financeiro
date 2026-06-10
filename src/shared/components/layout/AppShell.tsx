@@ -1,8 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, BarChart3, Users, CheckSquare,
-  Settings, LogOut, User, Compass, FileUp, Target, Search
+  Settings, LogOut, User, Compass, FileUp, Target, Search, MoreHorizontal, X
 } from 'lucide-react'
+import { useState as useMobileMenuState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/shared/lib/utils'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -26,6 +27,10 @@ const navItems = [
   { to: '/import',    icon: FileUp,          label: 'Importar'   },
   { to: '/settings',  icon: Settings,        label: 'Ajustes'    },
 ]
+
+// Mobile: primeiros 4 + botão "mais"
+const mobileMainItems = navItems.slice(0, 4)
+const mobileMoreItems = navItems.slice(4)
 
 function NavItem({ to, icon: Icon, label }: { to: string; icon: React.ElementType; label: string }) {
   return (
@@ -154,27 +159,47 @@ function Sidebar() {
 }
 
 function MobileBottomNav() {
+  const [showMore, setShowMore] = useMobileMenuState(false)
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 px-2 pb-safe">
-      <div className="flex items-center justify-around py-1">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              cn(
-                'flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-medium transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground'
-              )
-            }
-          >
-            <Icon className="h-5 w-5" />
-            <span>{label}</span>
-          </NavLink>
-        ))}
-      </div>
-    </nav>
+    <>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 px-2 pb-safe">
+        <div className="flex items-center justify-around py-1">
+          {mobileMainItems.map(({ to, icon: Icon, label }) => (
+            <NavLink key={to} to={to} end={to === '/'}
+              className={({ isActive }) =>
+                cn('flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-medium transition-colors',
+                  isActive ? 'text-primary' : 'text-muted-foreground')}>
+              <Icon className="h-5 w-5" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+          <button onClick={() => setShowMore((v) => !v)}
+            className={cn('flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-medium transition-colors',
+              showMore ? 'text-primary' : 'text-muted-foreground')}>
+            {showMore ? <X className="h-5 w-5" /> : <MoreHorizontal className="h-5 w-5" />}
+            <span>Mais</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Menu "mais" */}
+      {showMore && (
+        <>
+          <div className="md:hidden fixed inset-0 z-30 bg-black/20" onClick={() => setShowMore(false)} />
+          <div className="md:hidden fixed bottom-16 left-2 right-2 z-40 bg-card border rounded-xl shadow-lg p-2 grid grid-cols-4 gap-1">
+            {mobileMoreItems.map(({ to, icon: Icon, label }) => (
+              <NavLink key={to} to={to} onClick={() => setShowMore(false)}
+                className={({ isActive }) =>
+                  cn('flex flex-col items-center gap-1 p-3 rounded-lg text-[10px] font-medium transition-colors',
+                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary')}>
+                <Icon className="h-5 w-5" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </>
+      )}
+    </>
   )
 }
 
