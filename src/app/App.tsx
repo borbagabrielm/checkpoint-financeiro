@@ -11,6 +11,7 @@ import { OfflineBanner } from '@/shared/hooks/useOnlineStatus'
 import { usePWA } from '@/shared/hooks/usePWA'
 import { Onboarding } from '@/shared/components/ui/Onboarding'
 import { useRecurringRunner } from '@/features/recurring/hooks/useRecurringRunner'
+import { sendFriendRequest } from '@/features/social/services/socialService'
 
 // Pages
 import AuthPage from '@/pages/Auth'
@@ -80,6 +81,24 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [done, setDone] = useState(() => !!localStorage.getItem(`onboarding_done_${user?.id}`))
   useRecurringRunner() // Executa recorrentes ao fazer login
+
+  // Processa convite pendente após login/cadastro
+  useEffect(() => {
+    if (!user?.id) return
+    const pendingInvite = localStorage.getItem('pending_invite')
+    if (!pendingInvite || pendingInvite === user.id) {
+      localStorage.removeItem('pending_invite')
+      return
+    }
+    localStorage.removeItem('pending_invite')
+    sendFriendRequest(user.id, pendingInvite)
+      .then(() => {
+        import('sonner').then(({ toast }) =>
+          toast.success('Solicitação de amizade enviada!')
+        )
+      })
+      .catch(() => {})
+  }, [user?.id])
 
   if (!done) {
     return <Onboarding onComplete={() => setDone(true)} userId={user?.id} />
