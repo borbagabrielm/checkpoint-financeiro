@@ -3,7 +3,7 @@ import { Check, X, ChevronDown, Users, AlertCircle, Search, Tag, Sparkles, Loade
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
-import { cn, formatCurrency, formatDate, getInitials } from '@/shared/lib/utils'
+import { cn, formatCurrency, formatDate, getInitials, roundToCents } from '@/shared/lib/utils'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import { useFriends } from '@/features/social/hooks/useFriends'
 import { getOtherProfile } from '@/features/social/services/socialService'
@@ -161,6 +161,7 @@ function TransactionReviewCard({
   const { accepted } = useFriends()
   const [expanded, setExpanded] = useState(false)
   const [showSplit, setShowSplit] = useState(false)
+  const [splitType, setSplitType] = useState<'equal' | 'custom'>('equal')
 
   return (
     <div className={cn('rounded-xl border transition-all', tx.skip ? 'opacity-40 bg-secondary/30' : selected ? 'border-primary/50 bg-primary/5' : 'bg-card')}>
@@ -221,7 +222,7 @@ function TransactionReviewCard({
           </div>
 
           {tx.type === 'expense' && (
-            <div>
+            <div className="space-y-2">
               <button type="button" onClick={() => setShowSplit((v) => !v)}
                 className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <Users className="h-3.5 w-3.5" />
@@ -230,42 +231,109 @@ function TransactionReviewCard({
               </button>
 
               {showSplit && (
-                <div className="mt-2 space-y-2 pl-5">
+                <div className="space-y-2 pl-1">
                   {accepted.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Adicione amigos para dividir despesas.</p>
-                  ) : accepted.map((friendship) => {
-                    const profile = getOtherProfile(friendship, user!.id)
-                    if (!profile) return null
-                    const existing = tx.shared_with.find((s) => s.userId === profile.user_id)
-                    return (
-                      <div key={friendship.id} className="flex items-center gap-2">
-                        <button type="button"
-                          onClick={() => {
-                            if (existing) {
-                              onUpdate({ shared_with: tx.shared_with.filter((s) => s.userId !== profile.user_id) })
-                            } else {
-                              onUpdate({ shared_with: [...tx.shared_with, { userId: profile.user_id, displayName: profile.display_name ?? profile.username ?? 'Amigo', amount: (tx.amount / 2).toFixed(2) }] })
-                            }
-                          }}
-                          className={cn('w-4 h-4 rounded border-2 flex items-center justify-center transition-colors shrink-0', existing ? 'bg-primary border-primary' : 'border-border')}>
-                          {existing && <Check className="h-2.5 w-2.5 text-white" />}
-                        </button>
-                        <Avatar className="h-5 w-5">
-                          {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
-                          <AvatarFallback className="text-[10px]">{getInitials(profile.display_name)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs flex-1">{profile.display_name ?? profile.username}</span>
-                        {existing && (
-                          <div className="relative w-24">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                            <Input type="number" value={existing.amount}
-                              onChange={(e) => onUpdate({ shared_with: tx.shared_with.map((s) => s.userId === profile.user_id ? { ...s, amount: e.target.value } : s) })}
-                              className="h-7 pl-7 text-xs font-mono" />
-                          </div>
-                        )}
+                  ) : (
+                    <>
+                      {/* Seleção de amigos */}
+                      <div className="space-y-1">
+                        {accepted.map((friendship) => {
+                          const profile = getOtherProfile(friendship, user!.id)
+                          if (!profile) return null
+                          const existing = tx.shared_with.find((s) => s.userId === profile.user_id)
+                          const totalPeople = tx.shared_with.length + 1
+                          const equalShare = tx.amount > 0 ? roundToCents(tx.amount / (totalPeople + (existing ? 0 : 1))) : 0
+
+                          return (
+                            <div key={friendship.id} className="flex items-center gap-2">
+                              <button type="button"
+                                onClick={() => {
+                                  if (existing) {
+                                    const updated = tx.shared_with.filter((s) => s.userId !== profile.user_id)
+                                    // Recalcula divisão igual para os restantes
+                                    if (splitType === 'equal' && updated.length > 0) {
+                                      const newShare = roundToCents(tx.amount / (updated.length + 1))
+                                      onUpdate({ shared_with: updated.map((s) => ({ ...s, amount: newShare.toFixed(2) })) })
+                                    } else {
+                                      onUpdate({ shared_with: updated })
+                                    }
+                                  } else {
+                                    const newTotal = tx.shared_with.length + 2 // +1 amigo +1 eu
+                                    const newShare = roundToCents(tx.amount / newTotal)
+                                    const updated = [
+                                      ...tx.shared_with.map((s) => ({
+                                        ...s,
+                                        amount: splitType === 'equal' ? newShare.toFixed(2) : s.amount,
+                                      })),
+                                      { userId: profile.user_id, displayName: profile.display_name ?? profile.username ?? 'Amigo', amount: newShare.toFixed(2) },
+                                    ]
+                                    onUpdate({ shared_with: updated })
+                                  }
+                                }}
+                                className={cn('w-4 h-4 rounded border-2 flex items-center justify-center transition-colors shrink-0', existing ? 'bg-primary border-primary' : 'border-border')}>
+                                {existing && <Check className="h-2.5 w-2.5 text-white" />}
+                              </button>
+                              <Avatar className="h-5 w-5">
+                                {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                                <AvatarFallback className="text-[10px]">{getInitials(profile.display_name)}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs flex-1">{profile.display_name ?? profile.username}</span>
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
+
+                      {/* Tipo de divisão */}
+                      {tx.shared_with.length > 0 && (
+                        <>
+                          <div className="flex rounded-lg border border-border overflow-hidden text-[10px]">
+                            {(['equal', 'custom'] as const).map((t) => (
+                              <button key={t} type="button"
+                                onClick={() => {
+                                  setSplitType(t)
+                                  if (t === 'equal') {
+                                    // Recalcula divisão igual
+                                    const share = roundToCents(tx.amount / (tx.shared_with.length + 1))
+                                    onUpdate({ shared_with: tx.shared_with.map((s) => ({ ...s, amount: share.toFixed(2) })) })
+                                  }
+                                }}
+                                className={cn('flex-1 py-1.5 font-medium transition-colors',
+                                  splitType === t ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-secondary')}>
+                                {t === 'equal' ? 'Divisão igual' : 'Personalizado'}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Preview / inputs */}
+                          <div className="rounded-lg bg-secondary/50 p-2 space-y-1">
+                            <p className="text-[10px] text-muted-foreground">
+                              {splitType === 'equal'
+                                ? `${formatCurrency(tx.amount)} ÷ ${tx.shared_with.length + 1} pessoas = ${formatCurrency(roundToCents(tx.amount / (tx.shared_with.length + 1)))} cada`
+                                : 'Defina o valor de cada pessoa:'}
+                            </p>
+                            {splitType === 'custom' && tx.shared_with.map((s) => (
+                              <div key={s.userId} className="flex items-center gap-2">
+                                <span className="text-xs flex-1 truncate">{s.displayName}</span>
+                                <div className="relative w-24">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">R$</span>
+                                  <Input type="number" step="0.01" value={s.amount}
+                                    onChange={(e) => onUpdate({ shared_with: tx.shared_with.map((x) => x.userId === s.userId ? { ...x, amount: e.target.value } : x) })}
+                                    className="h-6 pl-6 text-[10px] font-mono" />
+                                </div>
+                              </div>
+                            ))}
+                            <div className="flex justify-between text-[10px] pt-0.5 border-t border-border">
+                              <span className="text-muted-foreground">Sua parte</span>
+                              <span className="font-mono font-medium">
+                                {formatCurrency(Math.max(0, tx.amount - tx.shared_with.reduce((s, f) => s + parseFloat(f.amount || '0'), 0)))}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </div>
