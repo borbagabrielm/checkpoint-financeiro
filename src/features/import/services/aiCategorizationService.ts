@@ -80,10 +80,24 @@ export async function categorizeWithAI(
 
   if (!needsAI.length) return fromMemory
 
-  const prompt = `Você é um assistente de finanças pessoais brasileiro. Categorize cada transação abaixo usando APENAS as categorias disponíveis fornecidas.
+  const prompt = `Você é um assistente de finanças pessoais brasileiro especialista em categorizar transações de cartão de crédito e débito.
 
-Categorias disponíveis:
+Categorias disponíveis (use EXATAMENTE este texto, incluindo emoji):
 ${availableCategories.join('\n')}
+
+Exemplos de mapeamentos corretos:
+- UBER, 99, CABIFY, TAXI, POSTO, COMBUSTIVEL, ESTACIONAMENTO → 🚗 Transporte
+- IFOOD, RAPPI, DELIVERY, RESTAURANTE, LANCHONETE, PIZZARIA, BURGER, MC DONALDS, SUBWAY, SUSHI → 🍕 Alimentação
+- SUPERMERCADO, CARREFOUR, EXTRA, ATACADAO, ZAFFARI, HORTIFRUTI, PADARIA, MERCADO → 🛒 Mercado
+- NETFLIX, SPOTIFY, AMAZON PRIME, DISNEY, YOUTUBE, HBO, APPLE, GOOGLE ONE → 📺 Assinaturas
+- FARMACIA, DROGARIA, HOSPITAL, CLINICA, PLANO DE SAUDE, UNIMED, LABORATORIO → 💊 Saúde
+- ALUGUEL, CONDOMINIO, AGUA, LUZ, GAS, INTERNET, CLARO, VIVO, TIM, OI → 🏠 Moradia
+- SHOPPING, RENNER, ZARA, C&A, HERING, RIACHUELO, LOJAS → 👚 Roupas
+- SALAO, BARBEARIA, MANICURE, SPA, PERFUMARIA → 💅 Beleza
+- ESCOLA, CURSO, FACULDADE, LIVRO, PAPELARIA → 📚 Educação
+- HOTEL, AIRBNB, PASSAGEM, AEROPORTO, AGENCIA → ✈️ Viagem
+- PET SHOP, VETERINARIO, RACAO → 🐾 Pets
+- BAR, BALADA, CINEMA, TEATRO, SHOW, PARQUE → 🏖️ Lazer
 
 Transações para categorizar (formato: ID | Descrição):
 ${needsAI.map((t) => `${t.id} | ${t.description}`).join('\n')}
@@ -91,10 +105,11 @@ ${needsAI.map((t) => `${t.id} | ${t.description}`).join('\n')}
 Responda APENAS com JSON válido, sem texto adicional, no formato:
 [{"id":"ID","category":"categoria exata da lista","confidence":"high|medium|low"}]
 
-Regras:
-- Use EXATAMENTE o texto da categoria como está na lista (incluindo emoji)
-- confidence "high" = certeza, "medium" = provável, "low" = chute
-- Se não souber, use a categoria mais genérica disponível`
+Regras críticas:
+- Use EXATAMENTE o texto da categoria como está na lista acima (incluindo emoji)
+- confidence "high" = certeza total, "medium" = provável, "low" = chute
+- NÃO invente categorias que não estão na lista
+- Se realmente não souber, use "⚠️ Outros"`
 
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY não configurada. Adicione no .env ou nas variáveis do Vercel.')
