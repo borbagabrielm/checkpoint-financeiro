@@ -300,11 +300,11 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-1.5">
-                {incomeCategories.map((cat) => (
+                {incomeCategories.map((cat: string) => (
                   <span key={cat} className="inline-flex items-center gap-1 bg-[hsl(var(--income-fill)/0.12)] text-[hsl(var(--income))] text-sm px-2.5 py-1 rounded-full">
                     {cat}
                     <button
-                      onClick={() => save.mutate({ income_categories: incomeCategories.filter((c) => c !== cat) })}
+                      onClick={() => save.mutate({ income_categories: incomeCategories.filter((c: string) => c !== cat) })}
                       className="opacity-60 hover:opacity-100 transition-opacity"
                     >
                       <X className="h-3 w-3" />

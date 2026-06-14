@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
-import { DEFAULT_CATEGORIES, DEFAULT_DEBIT_METHODS, DEFAULT_INCOME_METHODS } from '@/shared/lib/utils'
+import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES, DEFAULT_DEBIT_METHODS, DEFAULT_INCOME_METHODS } from '@/shared/lib/utils'
 
 export interface UserPreferences {
   categories: string[]
+  income_categories: string[]
   debit_payment_methods: string[]
   credit_payment_methods: string[]
   currency: string
@@ -13,6 +14,7 @@ export interface UserPreferences {
 
 const DEFAULT_PREFS: UserPreferences = {
   categories: DEFAULT_CATEGORIES,
+  income_categories: DEFAULT_INCOME_CATEGORIES,
   debit_payment_methods: DEFAULT_DEBIT_METHODS,
   credit_payment_methods: DEFAULT_INCOME_METHODS,
   currency: 'BRL',
@@ -27,7 +29,7 @@ export function useUserPreferences() {
     queryFn: async (): Promise<UserPreferences> => {
       const { data } = await supabase
         .from('user_preferences')
-        .select('categories, debit_payment_methods, credit_payment_methods, currency')
+        .select('categories, income_categories, debit_payment_methods, credit_payment_methods, currency')
         .eq('user_id', user!.id)
         .maybeSingle()
 
@@ -36,6 +38,9 @@ export function useUserPreferences() {
         categories: (data.categories as string[])?.length
           ? (data.categories as string[])
           : DEFAULT_PREFS.categories,
+        income_categories: (data.income_categories as string[])?.length
+          ? (data.income_categories as string[])
+          : DEFAULT_PREFS.income_categories,
         debit_payment_methods: (data.debit_payment_methods as string[])?.length
           ? (data.debit_payment_methods as string[])
           : DEFAULT_PREFS.debit_payment_methods,
@@ -59,6 +64,7 @@ export function useUserPreferences() {
           {
             user_id: user!.id,
             categories: merged.categories,
+            income_categories: merged.income_categories,
             debit_payment_methods: merged.debit_payment_methods,
             credit_payment_methods: merged.credit_payment_methods,
             currency: merged.currency,
