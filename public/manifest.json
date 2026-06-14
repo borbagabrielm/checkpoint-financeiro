@@ -1,11 +1,11 @@
 {
-  "name": "Checkpoint Financeiro",
-  "short_name": "Checkpoint",
-  "description": "Controle financeiro pessoal com divisão de gastos",
+  "name": "Raxo",
+  "short_name": "Raxo",
+  "description": "Divida gastos. Não amizades.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3b5bfc",
+  "background_color": "#0A0A0A",
+  "theme_color": "#3B3BFF",
   "orientation": "portrait-primary",
   "icons": [
     {

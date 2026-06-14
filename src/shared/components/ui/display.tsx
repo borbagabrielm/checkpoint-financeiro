@@ -53,22 +53,21 @@ CardFooter.displayName = 'CardFooter'
 
 // ─── Badge ────────────────────────────────────────────────────
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold transition-colors',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground',
-        secondary: 'border-transparent bg-secondary text-secondary-foreground',
-        destructive: 'border-transparent bg-destructive text-destructive-foreground',
-        outline: 'text-foreground',
-        income: 'border-transparent bg-[hsl(var(--income)/0.15)] text-[hsl(var(--income))]',
-        expense: 'border-transparent bg-[hsl(var(--expense)/0.15)] text-[hsl(var(--expense))]',
-        pending: 'border-transparent bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-        approved: 'border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-        rejected: 'border-transparent bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-      },
+        default:   'bg-primary/10 text-primary',
+        secondary: 'bg-secondary text-secondary-foreground',
+        // Aprovado: lime fill + texto escuro (funciona em qualquer tema)
+        approved:  'bg-[#AAFF47] text-[#0A0A0A]',
+        // Pendente: azul translúcido
+        pending:   'bg-[hsl(236_100%_61%/0.12)] text-[#3B3BFF] dark:text-[#7777FF] border border-[hsl(236_100%_61%/0.25)]',
+        // Rejeitado: vermelho translúcido
+        rejected:  'bg-[hsl(0_100%_64%/0.10)] text-[#CC2200] dark:text-[#FF6666] border border-[hsl(0_100%_64%/0.20)]',
+      }
     },
-    defaultVariants: { variant: 'default' },
+    defaultVariants: { variant: 'default' }
   }
 )
 

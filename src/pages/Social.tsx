@@ -38,7 +38,7 @@ export default function SocialPage() {
   const copyInviteLink = () => {
     const link = `${window.location.origin}/invite/${user!.id}`
     if (navigator.share) {
-      navigator.share({ title: 'Checkpoint Financeiro', text: 'Me adicione no Checkpoint Financeiro!', url: link })
+      navigator.share({ title: 'Raxo', text: 'Me adicione no Raxo!', url: link })
     } else {
       navigator.clipboard.writeText(link)
       toast.success('Link copiado! Compartilhe com seus amigos.')

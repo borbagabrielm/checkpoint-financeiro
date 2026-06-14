@@ -102,8 +102,21 @@ export function useImport() {
   }
 
   // ── Confirmar nome e ir para revisão ──────────────────────
-  const confirmName = () => {
+  const confirmName = (billingMonth?: string) => {
     if (!importName.trim()) return
+
+    // Ajusta transações fora do mês da fatura para dia 1 DO MÊS DA FATURA
+    if (billingMonth) {
+      // Ajusta para dia 1 do mês da fatura selecionado
+      const targetDate = `${billingMonth}-01`
+      setTransactions((prev) => prev.map((tx) => {
+        if (!tx.date.startsWith(billingMonth)) {
+          return { ...tx, date: targetDate }
+        }
+        return tx
+      }))
+    }
+
     setStep('review')
   }
 

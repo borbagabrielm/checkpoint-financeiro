@@ -37,17 +37,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: fullName },
-      },
-    })
-    return { error }
+const signUp = async (email: string, password: string, fullName?: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  })
+  if (error) return { error }
+  
+  // Se não há sessão após signup (confirmação desabilitada mas onAuthStateChange ainda não disparou),
+  // fazer login automático
+  if (!data.session) {
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    if (signInError) return { error: signInError }
   }
+  
+  return { error: null }
+}
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })

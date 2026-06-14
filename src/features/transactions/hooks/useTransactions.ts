@@ -20,7 +20,7 @@ export function useTransactions() {
     queryKey: queryKeys.transactions.all(user?.id ?? ''),
     queryFn: () => fetchTransactions(user!.id),
     enabled: !!user?.id,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
   })
 
   const invalidate = () =>

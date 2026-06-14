@@ -20,13 +20,6 @@ export async function createTransaction(
   input: TransactionInput,
   userId: string
 ): Promise<Transaction> {
-  // DEBUG — remover após confirmar fluxo
-  console.log('[createTransaction] input:', JSON.stringify({
-    amount: input.amount,
-    type: input.type,
-    shared_with: input.shared_with,
-  }))
-
   // Se há divisão, o criador paga apenas o que sobrar depois de descontar
   // os valores que serão cobrados dos amigos
   let creatorAmount = input.amount
@@ -143,11 +136,23 @@ export async function createSharedExpense(
   transactionId: string,
   shares: { user_id: string; amount: number; percentage?: number }[]
 ): Promise<void> {
-  // DEBUG — remover após confirmar fluxo
-  console.log('[createSharedExpense] transactionId:', transactionId, 'shares:', JSON.stringify(shares))
   if (!shares.length) return
 
-  const records = shares.map((s) => ({
+  // Verificar duplicatas — evitar criar shared_transaction que já existe
+  const { data: existing } = await supabase
+    .from('shared_transactions')
+    .select('shared_with_user_id')
+    .eq('transaction_id', transactionId)
+
+  const existingUserIds = new Set((existing ?? []).map((r) => r.shared_with_user_id))
+
+  const newShares = shares.filter((s) => !existingUserIds.has(s.user_id))
+  if (!newShares.length) {
+    console.warn('[createSharedExpense] Todas as divisões já existem — ignorando para evitar duplicata')
+    return
+  }
+
+  const records = newShares.map((s) => ({
     transaction_id: transactionId,
     shared_with_user_id: s.user_id,
     split_amount: roundToCents(s.amount),

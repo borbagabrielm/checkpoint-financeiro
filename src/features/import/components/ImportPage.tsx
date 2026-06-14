@@ -31,6 +31,10 @@ export default function ImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [billingMonth, setBillingMonth] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
 
   const historyQuery = useQuery({
     queryKey: ['import-history', user?.id],
@@ -198,9 +202,41 @@ export default function ImportPage() {
                 placeholder="Ex: Nubank — Maio 2026" autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && confirmName()} />
             </div>
+
+            <div className="space-y-1.5">
+              <Label>Mês da fatura</Label>
+              <Input
+                type="month"
+                value={billingMonth}
+                onChange={(e) => setBillingMonth(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Transações fora deste mês serão movidas para o dia 1 do mês selecionado.
+              </p>
+            </div>
+
+            {/* Alerta de transações fora do mês */}
+            {billingMonth && (() => {
+              const outsideCount = (parseResult?.transactions ?? []).filter((t) => {
+                return !t.date.startsWith(billingMonth)
+              }).length
+              return outsideCount > 0 ? (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-amber-700 dark:text-amber-400 text-sm">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{outsideCount} transaç{outsideCount > 1 ? 'ões estão' : 'ão está'} fora do mês selecionado</p>
+                    <p className="text-xs mt-0.5">
+                      Serão ajustadas para o dia 1 de {(() => { const [y, m] = billingMonth.split('-'); return new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) })()}.
+                      Você poderá corrigir individualmente na próxima etapa.
+                    </p>
+                  </div>
+                </div>
+              ) : null
+            })()}
+
             <div className="flex gap-2">
               <Button variant="outline" onClick={reset}>Cancelar</Button>
-              <Button onClick={confirmName} disabled={!importName.trim()}>Continuar para revisão</Button>
+              <Button onClick={() => confirmName(billingMonth)} disabled={!importName.trim()}>Continuar para revisão</Button>
             </div>
           </CardContent>
         </Card>

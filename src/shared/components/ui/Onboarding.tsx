@@ -85,6 +85,7 @@ export function Onboarding({ onComplete, userId }: Props) {
           user_id: userId!,
           display_name: data.display_name,
           username: data.username || null,
+          avatar_url: avatarUrl || user?.user_metadata?.avatar_url || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' })
       if (error) throw new Error(error.message)
@@ -147,7 +148,7 @@ export function Onboarding({ onComplete, userId }: Props) {
                 <Compass className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-2xl font-display font-semibold">Bem-vindo ao Checkpoint Financeiro!</h1>
+                <h1 className="text-2xl font-display font-semibold">Bem-vindo ao Raxo!</h1>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   Vamos configurar sua conta em poucos passos. Primeiro, personalize seu perfil.
                 </p>

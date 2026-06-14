@@ -7,8 +7,8 @@ import { useBudgets } from '@/features/budgets/hooks/useBudgets'
 import { approveSharedTransaction } from '@/features/shared-expenses/services/sharedExpensesService'
 
 export type NotificationItem =
-  | { kind: 'friend_request'; friendshipId: string; fromName: string; fromUserId: string; at: string }
-  | { kind: 'shared_expense'; sharedTxId: string; fromName: string; description: string; amount: number; at: string }
+  | { kind: 'friend_request'; friendshipId: string; fromName: string; fromAvatar: string | null; fromUserId: string; at: string }
+  | { kind: 'shared_expense'; sharedTxId: string; fromName: string; fromAvatar: string | null; description: string; amount: number; at: string }
   | { kind: 'budget_alert'; category: string; percentage: number; spent: number; limit: number; at: string }
 
 export function useNotifications() {
@@ -63,7 +63,7 @@ export function useNotifications() {
 
       const { data: profiles } = await supabase
         .from('user_profiles')
-        .select('user_id, display_name, username')
+        .select('user_id, display_name, username, avatar_url')
         .in('user_id', senderIds)
 
       const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p]))
@@ -77,6 +77,7 @@ export function useNotifications() {
           created_at: r.created_at,
           description: tx?.description ?? '',
           sender_name: profile?.display_name ?? profile?.username ?? 'Alguém',
+          sender_avatar: profile?.avatar_url ?? null,
         }
       })
     },
@@ -90,6 +91,7 @@ export function useNotifications() {
     kind: 'friend_request',
     friendshipId: f.id,
     fromName: f.requester_profile?.display_name ?? f.requester_profile?.username ?? 'Alguém',
+    fromAvatar: f.requester_profile?.avatar_url ?? null,
     fromUserId: f.requester_id,
     at: f.created_at,
   }))
@@ -98,6 +100,7 @@ export function useNotifications() {
     kind: 'shared_expense',
     sharedTxId: a.id,
     fromName: a.sender_name,
+    fromAvatar: a.sender_avatar,
     description: a.description,
     amount: a.split_amount,
     at: a.created_at,

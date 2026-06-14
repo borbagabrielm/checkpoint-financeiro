@@ -1,7 +1,7 @@
 import type { UseFormRegister, Control, FieldErrors } from 'react-hook-form'
 import { Controller } from 'react-hook-form'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
-import { cn } from '@/shared/lib/utils'
+import { cn, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/shared/lib/utils'
 import type { TransactionFormValues } from './TransactionForm'
 
 interface Props {
@@ -18,6 +18,9 @@ interface Props {
 export function BasicFields({
   register, control, errors, type, categories, paymentMethods, installmentAmount, installments,
 }: Props) {
+  // Receita → lista padrão de receitas | Despesa → categorias do usuário (preferences)
+  const categoryList = type === 'income' ? DEFAULT_INCOME_CATEGORIES : categories
+
   return (
     <>
       {/* Type toggle */}
@@ -29,7 +32,7 @@ export function BasicFields({
                 onClick={() => field.onChange(t)}
                 className={cn('flex-1 py-2 text-sm font-medium transition-colors',
                   field.value === t
-                    ? t === 'expense' ? 'bg-[hsl(var(--expense))] text-white' : 'bg-[hsl(var(--income))] text-white'
+                    ? t === 'expense' ? 'bg-[hsl(var(--expense))] text-white' : 'bg-[hsl(var(--income-fill))] text-[#0A0A0A]'
                     : 'bg-background text-muted-foreground hover:bg-secondary'
                 )}>
                 {t === 'expense' ? '↓ Despesa' : '↑ Receita'}
@@ -61,7 +64,7 @@ export function BasicFields({
         </div>
       </div>
 
-      {/* Category */}
+      {/* Category — muda conforme tipo */}
       <div className="space-y-1.5">
         <Label>Categoria</Label>
         <Controller name="category" control={control}
@@ -69,7 +72,7 @@ export function BasicFields({
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
               <SelectContent>
-                {categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                {categoryList.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
               </SelectContent>
             </Select>
           )} />

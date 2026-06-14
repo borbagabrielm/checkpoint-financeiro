@@ -85,22 +85,39 @@ export function truncate(str: string, max = 40): string {
 }
 
 // ─── Category helpers ─────────────────────────────────────────
-export const DEFAULT_CATEGORIES = [
+export const DEFAULT_EXPENSE_CATEGORIES = [
   '🛒 Mercado',
+  '🍕 Alimentação',
+  '🚗 Transporte',
+  '🏠 Moradia',
+  '💊 Saúde',
   '📺 Assinaturas',
   '👚 Roupas',
   '💅 Beleza',
   '🎁 Presente',
-  '💊 Saúde',
-  '🚗 Transporte',
-  '🏠 Moradia',
-  '🏖️ Lazer',
   '🐾 Pets',
   '✈️ Viagem',
   '📚 Educação',
-  '🍕 Alimentação',
+  '🏖️ Lazer',
   '⚙️ Serviços',
   '⚠️ Outros',
+]
+
+export const DEFAULT_INCOME_CATEGORIES = [
+  '💰 Salário',
+  '💼 Freelance',
+  '📈 Investimentos',
+  '🏦 Rendimentos',
+  '🎯 Bônus',
+  '🔄 Reembolso',
+  '🎁 Presente recebido',
+  '🏠 Aluguel recebido',
+  '💡 Outros rendimentos',
+]
+
+export const DEFAULT_CATEGORIES = [
+  ...DEFAULT_EXPENSE_CATEGORIES,
+  ...DEFAULT_INCOME_CATEGORIES,
 ]
 
 export const DEFAULT_DEBIT_METHODS = [

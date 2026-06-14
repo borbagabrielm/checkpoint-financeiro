@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Bell, UserPlus, SplitSquareHorizontal, Check, X, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
-import { Avatar, AvatarFallback } from '@/shared/components/ui/display'
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
 import { cn, formatCurrency, formatDate, getInitials } from '@/shared/lib/utils'
 import { useNotifications } from '@/shared/hooks/useNotifications'
 import type { NotificationItem } from '@/shared/hooks/useNotifications'
@@ -157,8 +157,9 @@ function FriendRequestItem({
     <li className="px-5 py-4 space-y-3 hover:bg-secondary/30 transition-colors">
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+          <Avatar className="h-10 w-10">
+            {notif.fromAvatar && <AvatarImage src={notif.fromAvatar} />}
+            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
               {getInitials(notif.fromName)}
             </AvatarFallback>
           </Avatar>
@@ -200,12 +201,13 @@ function SharedExpenseItem({
     <li className="px-5 py-4 space-y-3 hover:bg-secondary/30 transition-colors">
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+          <Avatar className="h-10 w-10">
+            {notif.fromAvatar && <AvatarImage src={notif.fromAvatar} />}
+            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
               {getInitials(notif.fromName)}
             </AvatarFallback>
           </Avatar>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 border-2 border-card">
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary border-2 border-card">
             <SplitSquareHorizontal className="h-2.5 w-2.5 text-white" />
           </span>
         </div>
@@ -225,14 +227,19 @@ function SharedExpenseItem({
         </div>
       </div>
       <div className="flex gap-2 ml-12">
-        <Button size="sm" className="flex-1 h-7 text-xs" onClick={onApprove} disabled={loading}>
+        <Button
+          size="sm"
+          className="flex-1 h-8 text-xs font-bold bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85"
+          onClick={onApprove}
+          disabled={loading}
+        >
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
           Aprovar
         </Button>
         <Button
           size="sm"
           variant="outline"
-          className="flex-1 h-7 text-xs hover:border-destructive hover:text-destructive"
+          className="flex-1 h-8 text-xs hover:border-destructive hover:text-destructive"
           onClick={onReject}
           disabled={loading}
         >

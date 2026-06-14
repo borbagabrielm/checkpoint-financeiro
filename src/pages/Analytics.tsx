@@ -292,7 +292,7 @@ function exportPDF(
 </head>
 <body>
   <h1>${title}</h1>
-  <p class="subtitle">Gerado em ${new Date().toLocaleDateString('pt-BR')} por Checkpoint Financeiro</p>
+  <p class="subtitle">Gerado em ${new Date().toLocaleDateString('pt-BR')} por Raxo</p>
   <div class="summary">
     <div class="card">
       <div class="card-label">Receitas</div>
@@ -318,7 +318,7 @@ function exportPDF(
     <tbody>${rows}</tbody>
   </table>
   <p style="font-size:11px;color:#aaa;margin-top:24px;text-align:center">
-    ${transactions.length} transações · Checkpoint Financeiro
+    ${transactions.length} transações · Raxo
   </p>
 </body>
 </html>`

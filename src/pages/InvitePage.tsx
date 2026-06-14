@@ -92,7 +92,7 @@ export default function InvitePage() {
             <UserPlus className="h-4 w-4" />
             Convite de amizade
           </div>
-          <h1 className="text-2xl font-display font-semibold">Checkpoint Financeiro</h1>
+          <h1 className="text-2xl font-display font-semibold">Raxo</h1>
           <p className="text-sm text-muted-foreground mt-1">Controle financeiro com divisão de gastos</p>
         </div>
 
@@ -112,7 +112,7 @@ export default function InvitePage() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              quer se conectar com você no Checkpoint Financeiro para dividir despesas e acompanhar gastos juntos.
+              quer se conectar com você no Raxo para dividir despesas e acompanhar gastos juntos.
             </p>
 
             {sent ? (

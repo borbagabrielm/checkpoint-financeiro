@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 
-// ─── Tipos ────────────────────────────────────────────────────
 export interface CategorizationMapping {
   [keyword: string]: string
 }
@@ -34,11 +33,9 @@ export function categorizeFromMemory(description: string, mappings: Categorizati
   return null
 }
 
-// ─── Tipos internos ───────────────────────────────────────────
 interface TxToCateg { id: string; description: string }
 interface CategResult { id: string; category: string; confidence: 'high' | 'medium' | 'low' }
 
-// ─── Categorização via API do Claude — com lotes de 15 ────────
 export async function categorizeWithAI(
   transactions: TxToCateg[],
   availableCategories: string[],
@@ -47,7 +44,7 @@ export async function categorizeWithAI(
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY não configurada.')
 
-  // Separa os que já têm mapeamento aprendido
+  // Separa os que já têm mapeamento aprendido — evita chamar a API desnecessariamente
   const fromMemory: CategResult[] = []
   const needsAI: TxToCateg[] = []
 
@@ -59,8 +56,8 @@ export async function categorizeWithAI(
 
   if (!needsAI.length) return fromMemory
 
-  // Processa em lotes de 15 para não estourar o limite de tokens
-  const BATCH_SIZE = 15
+  // Lotes de 10 — menor que 15 para garantir resposta completa e menor custo
+  const BATCH_SIZE = 10
   const allAIResults: CategResult[] = []
 
   for (let i = 0; i < needsAI.length; i += BATCH_SIZE) {
@@ -72,41 +69,29 @@ export async function categorizeWithAI(
   return [...fromMemory, ...allAIResults]
 }
 
-// ─── Processa um lote de até 15 transações ────────────────────
 async function categorizeBatch(
   batch: TxToCateg[],
   availableCategories: string[],
   apiKey: string
 ): Promise<CategResult[]> {
-  const prompt = `Você é um assistente de finanças pessoais brasileiro especialista em categorizar transações de cartão de crédito e débito.
+  // Prompt compacto — menos tokens de entrada = menor custo
+  const categoriesList = availableCategories.join(', ')
+  const txList = batch.map((t) => `${t.id}|${t.description}`).join('\n')
 
-Categorias disponíveis (use EXATAMENTE este texto, incluindo emoji):
-${availableCategories.join('\n')}
+  const prompt = `Categorize as transações brasileiras abaixo. Use EXATAMENTE uma das categorias da lista.
 
-Exemplos de mapeamentos corretos:
-- UBER, 99, CABIFY, TAXI, POSTO, COMBUSTIVEL, ESTACIONAMENTO → 🚗 Transporte
-- IFOOD, RAPPI, DELIVERY, RESTAURANTE, LANCHONETE, PIZZARIA, BURGER, MC DONALDS, SUBWAY, SUSHI → 🍕 Alimentação
-- SUPERMERCADO, CARREFOUR, EXTRA, ATACADAO, ZAFFARI, HORTIFRUTI, PADARIA, MERCADO → 🛒 Mercado
-- NETFLIX, SPOTIFY, AMAZON PRIME, DISNEY, YOUTUBE, HBO, APPLE, GOOGLE ONE → 📺 Assinaturas
-- FARMACIA, DROGARIA, HOSPITAL, CLINICA, PLANO DE SAUDE, UNIMED, LABORATORIO → 💊 Saúde
-- ALUGUEL, CONDOMINIO, AGUA, LUZ, GAS, INTERNET, CLARO, VIVO, TIM, OI → 🏠 Moradia
-- SHOPPING, RENNER, ZARA, C&A, HERING, RIACHUELO, LOJAS → 👚 Roupas
-- SALAO, BARBEARIA, MANICURE, SPA, PERFUMARIA → 💅 Beleza
-- ESCOLA, CURSO, FACULDADE, LIVRO, PAPELARIA → 📚 Educação
-- HOTEL, AIRBNB, PASSAGEM, AEROPORTO, AGENCIA → ✈️ Viagem
-- PET SHOP, VETERINARIO, RACAO → 🐾 Pets
-- BAR, BALADA, CINEMA, TEATRO, SHOW, PARQUE → 🏖️ Lazer
+Categorias: ${categoriesList}
 
-Transações para categorizar (formato: ID | Descrição):
-${batch.map((t) => `${t.id} | ${t.description}`).join('\n')}
+Exemplos rápidos:
+UBER/99/TAXI→🚗 Transporte, IFOOD/DELIVERY→🍕 Alimentação, NETFLIX/SPOTIFY→📺 Assinaturas,
+SUPERMERCADO/CARREFOUR/ZAFFARI→🛒 Mercado, FARMACIA/HOSPITAL→💊 Saúde,
+ALUGUEL/LUZ/INTERNET→🏠 Moradia, SALAO/BARBEARIA→💅 Beleza,
+ESCOLA/CURSO→📚 Educação, HOTEL/PASSAGEM→✈️ Viagem
 
-Responda APENAS com JSON válido, sem texto adicional, no formato:
-[{"id":"ID","category":"categoria exata da lista","confidence":"high|medium|low"}]
+Transações (formato ID|Descrição):
+${txList}
 
-Regras críticas:
-- Use EXATAMENTE o texto da categoria como está na lista acima (incluindo emoji)
-- NÃO invente categorias que não estão na lista
-- Se não souber, use "⚠️ Outros"`
+Responda APENAS JSON: [{"id":"ID","category":"categoria","confidence":"high|medium|low"}]`
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -118,7 +103,7 @@ Regras críticas:
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
+      max_tokens: 512, // 10 itens × ~40 tokens cada = ~400, 512 é suficiente e mais barato
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -132,7 +117,6 @@ Regras críticas:
     const cleaned = text.replace(/```json|```/g, '').trim()
     return JSON.parse(cleaned) as CategResult[]
   } catch {
-    // Se falhar o parse, retorna sem categoria para o usuário categorizar manualmente
     return batch.map((t) => ({ id: t.id, category: '', confidence: 'low' as const }))
   }
 }

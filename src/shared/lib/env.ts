@@ -11,7 +11,7 @@ const missing = Object.entries(required)
 
 if (missing.length > 0) {
   throw new Error(
-    `[Checkpoint Financeiro] Variáveis de ambiente obrigatórias não encontradas:\n` +
+    `[Raxo] Variáveis de ambiente obrigatórias não encontradas:\n` +
     missing.map((k) => `  • ${k}`).join('\n') +
     `\n\nCrie um arquivo .env na raiz do projeto com essas variáveis.`
   )

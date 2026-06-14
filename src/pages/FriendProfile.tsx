@@ -117,30 +117,40 @@ export default function FriendProfilePage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/social')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          {loadingProfile ? <Skeleton className="h-12 w-12 rounded-full" /> : (
-            <Avatar className="h-12 w-12 shrink-0">
-              {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
-              <AvatarFallback className="text-base bg-primary/10 text-primary">
-                {getInitials(profile?.display_name)}
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <div className="min-w-0">
-            <h1 className="text-xl font-display font-semibold truncate">
-              {profile?.display_name ?? profile?.username ?? 'Carregando...'}
-            </h1>
-            {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
+      {/* Header colorido com identidade Raxo */}
+      <div className="-mx-4 md:-mx-6 -mt-5 md:-mt-6 bg-primary px-4 md:px-6 pt-4 pb-8 rounded-b-2xl mb-2">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate('/social')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {loadingProfile ? <Skeleton className="h-12 w-12 rounded-full bg-white/20" /> : (
+              <Avatar className="h-12 w-12 shrink-0 ring-2 ring-white/30">
+                {profile?.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                <AvatarFallback className="text-base bg-[#AAFF47] text-[#0A0A0A] font-bold">
+                  {getInitials(profile?.display_name)}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-xl font-display font-semibold text-white truncate">
+                {profile?.display_name ?? profile?.username ?? 'Carregando...'}
+              </h1>
+              {profile?.username && <p className="text-sm text-white/60">@{profile.username}</p>}
+            </div>
           </div>
+          {/* Saldo no header */}
+          {!loadingTxs && balance !== 0 && (
+            <div className="text-right shrink-0">
+              <p className="text-2xl font-black text-[#AAFF47] leading-none">{formatCurrency(Math.abs(balance))}</p>
+              <p className="text-xs text-white/60 mt-0.5">{balance > 0 ? 'te deve' : 'você deve'}</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Saldo */}
-      <Card className={cn('border-2', balance === 0 ? 'border-border' : balance > 0 ? 'border-[hsl(var(--income)/0.4)] bg-[hsl(var(--income)/0.05)]' : 'border-[hsl(var(--expense)/0.4)] bg-[hsl(var(--expense)/0.05)]')}>
+      {/* Saldo detalhado */}
+      <Card>
         <CardContent className="pt-5 pb-5">
           <div className="flex items-center gap-4">
             <div className={cn('flex items-center justify-center w-12 h-12 rounded-full shrink-0', balance === 0 ? 'bg-secondary' : balance > 0 ? 'bg-[hsl(var(--income)/0.15)]' : 'bg-[hsl(var(--expense)/0.15)]')}>
@@ -166,7 +176,7 @@ export default function FriendProfilePage() {
       {balance > 0 && (
         <button
           onClick={() => {
-            const msg = `Oi! Pelo Checkpoint Financeiro, você tem um saldo de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)} comigo. Poderia acertar? 😊`
+            const msg = `Oi! Pelo Raxo, você tem um saldo de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)} comigo. Poderia acertar? 😊`
             if (navigator.share) {
               navigator.share({ text: msg }).catch(() => {})
             } else {
