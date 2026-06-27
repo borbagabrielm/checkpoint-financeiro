@@ -2,8 +2,12 @@
 // Caminho no projeto: supabase/functions/send-push/index.ts
 //
 // Recebe um evento (disparado pelo trigger SQL ou chamado manualmente),
-// busca a(s) push_subscription(s) do destinatário e envia a notificação
-// usando o protocolo Web Push assinado com VAPID.
+// busca a(s) push_subscription(s) do(s) destinatário(s) e envia a
+// notificação usando o protocolo Web Push assinado com VAPID.
+//
+// Aceita tanto um único destinatário (recipientUserId) quanto uma lista
+// (recipientUserIds) — útil para avisar todo um grupo de divisão de
+// despesa de uma vez, ou um broadcast geral.
 //
 // Deploy: supabase functions deploy send-push
 // Secrets necessários (supabase secrets set NOME=valor):
@@ -25,7 +29,9 @@ const supabase = createClient(supabaseUrl, serviceRoleKey)
 
 interface PushPayload {
   type: 'shared_expense' | 'friend_request' | 'budget_alert' | 'generic'
-  recipientUserId: string
+  // Use UM dos dois abaixo:
+  recipientUserId?: string       // destinatário único (compatibilidade com o trigger existente)
+  recipientUserIds?: string[]    // lista de destinatários — envia pra todos de uma vez
   sharedTransactionId?: string
   friendshipId?: string
   title?: string
@@ -36,13 +42,24 @@ interface PushPayload {
 Deno.serve(async (req) => {
   try {
     const payload: PushPayload = await req.json()
-    const { recipientUserId } = payload
 
-    if (!recipientUserId) {
-      return new Response(JSON.stringify({ error: 'recipientUserId obrigatório' }), { status: 400 })
+    // Normaliza para uma lista única, aceitando os dois formatos de entrada
+    const recipientIds = payload.recipientUserIds?.length
+      ? payload.recipientUserIds
+      : payload.recipientUserId
+        ? [payload.recipientUserId]
+        : []
+
+    if (!recipientIds.length) {
+      return new Response(
+        JSON.stringify({ error: 'Informe recipientUserId ou recipientUserIds' }),
+        { status: 400 }
+      )
     }
 
-    // Monta título/corpo conforme o tipo de evento
+    // Monta título/corpo conforme o tipo de evento (igual para todos os destinatários
+    // no caso de shared_expense/friend_request/budget_alert — o conteúdo não varia
+    // por pessoa, exceto se você quiser personalizar por destinatário no futuro)
     let title = payload.title ?? 'Raxo'
     let body = payload.body ?? ''
     let url = payload.url ?? '/'
@@ -84,15 +101,19 @@ Deno.serve(async (req) => {
       tag = 'budget-alert'
     }
 
-    // Busca todas as subscriptions do destinatário (pode ter vários dispositivos)
+    // Busca todas as subscriptions de TODOS os destinatários de uma vez
+    // (cada pessoa pode ter mais de um dispositivo/navegador subscrito)
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .eq('user_id', recipientUserId)
+      .select('user_id, endpoint, p256dh, auth')
+      .in('user_id', recipientIds)
 
     if (error) throw error
     if (!subscriptions?.length) {
-      return new Response(JSON.stringify({ sent: 0, reason: 'Nenhuma subscription encontrada' }), { status: 200 })
+      return new Response(
+        JSON.stringify({ sent: 0, recipients: recipientIds.length, reason: 'Nenhuma subscription encontrada' }),
+        { status: 200 }
+      )
     }
 
     const notificationPayload = JSON.stringify({ title, body, url, tag })
@@ -100,14 +121,32 @@ Deno.serve(async (req) => {
     const results = await Promise.allSettled(
       subscriptions.map((sub) =>
         webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           notificationPayload
         )
       )
     )
+
+    // Loga o erro detalhado de cada falha — essencial para diagnosticar
+    // problemas específicos de cada provedor (Apple, Google, Mozilla)
+    const errors: { endpoint: string; statusCode?: number; message: string; body?: string }[] = []
+    results.forEach((r, i) => {
+      if (r.status === 'rejected') {
+        const reason = r.reason as any
+        console.error('[send-push] falha ao enviar:', {
+          endpoint: subscriptions[i].endpoint,
+          statusCode: reason?.statusCode,
+          message: reason?.message,
+          body: reason?.body,
+        })
+        errors.push({
+          endpoint: subscriptions[i].endpoint,
+          statusCode: reason?.statusCode,
+          message: reason?.message ?? String(reason),
+          body: reason?.body,
+        })
+      }
+    })
 
     // Remove subscriptions inválidas (410 Gone / 404) — dispositivo desinstalou ou expirou
     const toRemove: string[] = []
@@ -124,11 +163,22 @@ Deno.serve(async (req) => {
     }
 
     const sentCount = results.filter((r) => r.status === 'fulfilled').length
+    // Quantos destinatários únicos foram efetivamente alcançados (não contando
+    // múltiplos dispositivos da mesma pessoa como "destinatários" separados)
+    const reachedUserIds = new Set(
+      subscriptions.filter((_, i) => results[i].status === 'fulfilled').map((s) => s.user_id)
+    )
 
-    return new Response(JSON.stringify({ sent: sentCount, total: subscriptions.length }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({
+        sent: sentCount,
+        totalSubscriptions: subscriptions.length,
+        recipientsRequested: recipientIds.length,
+        recipientsReached: reachedUserIds.size,
+        errors: errors.length ? errors : undefined,
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
   } catch (err) {
     console.error('[send-push] erro:', err)
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
