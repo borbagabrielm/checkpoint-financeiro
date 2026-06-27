@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 export function usePWA() {
   const [canInstall, setCanInstall] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<Event & { prompt: () => void } | null>(null)
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default')
 
   useEffect(() => {
     // Registrar service worker
@@ -19,11 +18,6 @@ export function usePWA() {
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Status de notificações
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission)
-    }
-
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
@@ -34,19 +28,9 @@ export function usePWA() {
     setDeferredPrompt(null)
   }
 
-  const requestNotifications = async (): Promise<boolean> => {
-    if (!('Notification' in window)) return false
-    const permission = await Notification.requestPermission()
-    setNotificationPermission(permission)
-    return permission === 'granted'
-  }
-
-  const sendLocalNotification = (title: string, body: string, url = '/') => {
-    if (notificationPermission !== 'granted') return
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.showNotification(title, { body, icon: '/icon-192.png', data: { url } })
-    })
-  }
-
-  return { canInstall, install, notificationPermission, requestNotifications, sendLocalNotification }
+  return { canInstall, install }
 }
+
+// Nota: gerenciamento de permissão e subscription de push notifications
+// foi movido para usePushSubscription.ts — hook dedicado e mais completo,
+// que já salva a subscription no Supabase automaticamente.

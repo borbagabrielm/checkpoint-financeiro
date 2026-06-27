@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  Moon, Sun, Monitor, LogOut, Palette, Tag, CreditCard,
+  Moon, Sun, Monitor, LogOut, Palette, Tag, CreditCard, Bell,
   Plus, X, RefreshCw, Trash2, ToggleLeft, ToggleRight, DollarSign,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/shared/components/ui/feedback'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useTheme } from '@/shared/hooks/useTheme'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
+import { PushNotificationToggle } from '@/shared/components/ui/PushNotificationToggle'
 import { useBudgets } from '@/features/budgets/hooks/useBudgets'
 import { useRecurring } from '@/features/recurring/hooks/useRecurring'
 import { cn, formatCurrency, DEFAULT_INCOME_CATEGORIES } from '@/shared/lib/utils'
@@ -162,6 +163,17 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />Notificações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PushNotificationToggle />
             </CardContent>
           </Card>
 

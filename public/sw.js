@@ -1,4 +1,4 @@
-const CACHE = 'checkpoint-v1'
+const CACHE = 'raxo-v1'
 const STATIC = [
   '/',
   '/index.html',
@@ -36,15 +36,19 @@ self.addEventListener('fetch', (e) => {
   )
 })
 
-// Push notifications
+// ── Push notifications ──────────────────────────────────────
 self.addEventListener('push', (e) => {
-  const data = e.data?.json() ?? {}
+  let data = {}
+  try { data = e.data?.json() ?? {} } catch { data = { title: 'Raxo', body: e.data?.text() ?? '' } }
+
   e.waitUntil(
-    self.registration.showNotification(data.title ?? 'Checkpoint Financeiro', {
+    self.registration.showNotification(data.title ?? 'Raxo', {
       body: data.body ?? '',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
+      tag: data.tag,                 // agrupa notificações do mesmo tipo
       data: { url: data.url ?? '/' },
+      vibrate: [100, 50, 100],
     })
   )
 })
@@ -54,9 +58,18 @@ self.addEventListener('notificationclick', (e) => {
   e.waitUntil(
     clients.matchAll({ type: 'window' }).then((cs) => {
       const url = e.notification.data?.url ?? '/'
-      const existing = cs.find((c) => c.url === url)
+      const existing = cs.find((c) => c.url.includes(url))
       if (existing) return existing.focus()
       return clients.openWindow(url)
     })
+  )
+})
+
+// Se a subscription expirar/mudar, o navegador dispara este evento.
+// Idealmente reenviar pro backend — tratado no client (usePushSubscription).
+self.addEventListener('pushsubscriptionchange', (e) => {
+  e.waitUntil(
+    self.registration.pushManager.subscribe(e.oldSubscription?.options)
+      .catch(() => {})
   )
 })
