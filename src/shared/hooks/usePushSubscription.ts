@@ -5,14 +5,17 @@ import { useAuth } from './useAuth'
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined
 
 // Converte a chave pública VAPID (base64url) para Uint8Array — formato
-// exigido pela PushManager API
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+// exigido pela PushManager API.
+// Retorna ArrayBuffer explícito (não Uint8Array) para evitar conflito de
+// tipos entre versões do lib.dom.d.ts (Uint8Array<ArrayBufferLike> vs
+// ArrayBufferView<ArrayBuffer> exigido por applicationServerKey).
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
   const rawData = window.atob(base64)
   const outputArray = new Uint8Array(rawData.length)
   for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i)
-  return outputArray
+  return outputArray.buffer as ArrayBuffer
 }
 
 export type PushStatus = 'unsupported' | 'default' | 'granted' | 'denied' | 'subscribed'
