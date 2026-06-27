@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, Pencil, Trash2, SplitSquareHorizontal, Check, X, Tag, Users, Loader2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
@@ -30,7 +31,7 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
 
   const [search, setSearch]             = useState('')
   const [typeFilter, setTypeFilter]     = useState<'all' | 'income' | 'expense'>('all')
-  const [page, setPage]                 = useState(1)
+  const [sortBy, setSortBy]             = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc')
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
   const [splitTarget, setSplitTarget]   = useState<Transaction | null>(null)
   const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set())
@@ -38,7 +39,7 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
   const [bulkLoading, setBulkLoading]   = useState(false)
 
   const filtered = useMemo(() => {
-    return transactions.filter((t) => {
+    const list = transactions.filter((t) => {
       const matchesMonth  = monthFilter === 'all' || t.date.startsWith(monthFilter)
       const matchesType   = typeFilter === 'all' || t.type === typeFilter
       const matchesSearch = !search ||
@@ -46,11 +47,15 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
         t.category.toLowerCase().includes(search.toLowerCase())
       return matchesMonth && matchesType && matchesSearch
     })
-  }, [transactions, monthFilter, typeFilter, search])
-
-  const filterKey = `${monthFilter}|${typeFilter}|${search}`
-  const [lastKey, setLastKey] = useState(filterKey)
-  if (filterKey !== lastKey) { setPage(1); setLastKey(filterKey) }
+    return list.sort((a, b) => {
+      switch (sortBy) {
+        case 'date_asc':    return a.date.localeCompare(b.date)
+        case 'amount_desc': return Math.abs(b.amount) - Math.abs(a.amount)
+        case 'amount_asc':  return Math.abs(a.amount) - Math.abs(b.amount)
+        default:            return b.date.localeCompare(a.date)
+      }
+    })
+  }, [transactions, monthFilter, typeFilter, search, sortBy])
 
   const selectedExpenses = useMemo(
     () => [...selectedIds].filter((id) => transactions.find((t) => t.id === id)?.type === 'expense'),
@@ -129,13 +134,11 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
     )
   }
 
-  const paginated = filtered.slice(0, page * PAGE_SIZE)
-
   return (
     <div className="space-y-4">
-      {/* Filtros */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      {/* Filtros + Selecionar todos */}
+      <div className="flex gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-40">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar transações..."
@@ -153,68 +156,118 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
             </button>
           ))}
         </div>
+        {/* Ordenação */}
+        <div className="flex rounded-lg border border-border overflow-hidden text-xs shrink-0">
+          {([
+            { value: 'date_desc', label: '↓ Data' },
+            { value: 'date_asc',  label: '↑ Data' },
+            { value: 'amount_desc', label: '↓ R$' },
+            { value: 'amount_asc',  label: '↑ R$' },
+          ] as const).map(({ value, label }) => (
+            <button key={value} onClick={() => setSortBy(value)}
+              className={cn('px-2.5 py-2 font-medium transition-colors border-l border-border first:border-l-0',
+                sortBy === value ? 'bg-secondary text-foreground' : 'bg-background text-muted-foreground hover:bg-secondary/50')}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Toolbar em lote */}
+      {/* Toolbar de seleção em lote */}
+      {selectedIds.size === 0 && filtered.length > 0 && (
+        <div className="flex items-center gap-2 px-1">
+          <button
+            onClick={() => setSelectedIds(new Set(filtered.map((t) => t.id)))}
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+          >
+            <div className="w-4 h-4 rounded border border-border bg-background group-hover:border-primary group-hover:bg-primary/5 flex items-center justify-center transition-all">
+              <Check className="h-2.5 w-2.5 text-transparent group-hover:text-primary transition-colors" />
+            </div>
+            Selecionar todos ({filtered.length})
+          </button>
+        </div>
+      )}
+
       {selectedIds.size > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 p-2.5 flex-wrap">
-            <span className="text-sm font-semibold text-primary shrink-0">
-              {selectedIds.size} selecionada{selectedIds.size > 1 ? 's' : ''}
-            </span>
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => {
+                  if (selectedIds.size === filtered.length) setSelectedIds(new Set())
+                  else setSelectedIds(new Set(filtered.map((t) => t.id)))
+                }}
+                className={cn(
+                  'w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0',
+                  selectedIds.size === filtered.length
+                    ? 'bg-primary border-primary'
+                    : 'border-primary bg-white dark:bg-transparent'
+                )}
+              >
+                <Check className="h-3 w-3 text-white" />
+              </button>
+              <span className="text-sm font-semibold text-primary">
+                {selectedIds.size} selecionada{selectedIds.size !== 1 ? 's' : ''}
+                <span className="font-normal text-primary/60 ml-1">de {filtered.length}</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded hover:bg-secondary"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-            {/* Categoria em lote */}
-            <Select value={bulkCategory} onValueChange={setBulkCategory}>
-              <SelectTrigger className="h-7 text-xs flex-1 min-w-32 max-w-44">
-                <SelectValue placeholder="Categoria..." />
-              </SelectTrigger>
-              <SelectContent>
-                {preferences.categories.map((c) => (
-                  <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="sm" className="h-7 text-xs" onClick={applyBulkCategory} disabled={!bulkCategory}>
-              <Tag className="h-3 w-3" />
-              Aplicar
-            </Button>
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <Select value={bulkCategory} onValueChange={setBulkCategory}>
+                <SelectTrigger className="h-8 text-xs flex-1 min-w-28">
+                  <SelectValue placeholder="Mudar categoria..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {preferences.categories.map((c) => (
+                    <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" className="h-8 text-xs shrink-0" onClick={applyBulkCategory} disabled={!bulkCategory}>
+                <Tag className="h-3 w-3" />
+                Aplicar
+              </Button>
+            </div>
 
-            {/* Divisão em lote — só para despesas */}
-            {selectedExpenses.length > 0 && (
+            <div className="flex gap-1.5 shrink-0">
+              {selectedExpenses.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    const firstExpense = transactions.find((t) => t.id === selectedExpenses[0])
+                    if (firstExpense) setSplitTarget({ ...firstExpense, _bulkIds: selectedExpenses } as any)
+                  }}
+                >
+                  <SplitSquareHorizontal className="h-3 w-3" />
+                  Dividir{selectedExpenses.length > 1 ? ` (${selectedExpenses.length})` : ''}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs"
-                onClick={() => {
-                  const firstExpense = transactions.find((t) => t.id === selectedExpenses[0])
-                  if (firstExpense) setSplitTarget({ ...firstExpense, _bulkIds: selectedExpenses } as any)
-                }}
+                className="h-8 text-xs hover:text-destructive hover:border-destructive"
+                onClick={handleBulkDelete}
+                disabled={bulkLoading}
               >
-                <SplitSquareHorizontal className="h-3 w-3" />
-                Dividir {selectedExpenses.length > 1 ? `(${selectedExpenses.length})` : ''}
+                <Trash2 className="h-3 w-3" />
+                Excluir{selectedIds.size > 1 ? ` (${selectedIds.size})` : ''}
               </Button>
-            )}
-
-            {/* Exclusão em lote */}
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs hover:text-destructive hover:border-destructive"
-              onClick={handleBulkDelete}
-              disabled={bulkLoading}
-            >
-              <Trash2 className="h-3 w-3" />
-              Excluir {selectedIds.size > 1 ? `(${selectedIds.size})` : ''}
-            </Button>
-
-            <button onClick={() => setSelectedIds(new Set())} className="text-muted-foreground hover:text-foreground ml-auto">
-              <X className="h-4 w-4" />
-            </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Lista */}
+      {/* Lista virtualizada */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
           <svg viewBox="492 221 90 88" width="44" height="44" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
@@ -230,31 +283,14 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
           </div>
         </div>
       ) : (
-        <ul className="space-y-1.5">
-          {paginated.map((tx) => (
-            <TransactionItem
-              key={tx.id}
-              transaction={tx}
-              selected={selectedIds.has(tx.id)}
-              onEdit={() => onEdit(tx)}
-              onDelete={() => setDeleteTarget(tx)}
-              onSplit={() => setSplitTarget(tx)}
-              onToggleSelect={() => toggleSelect(tx.id)}
-            />
-          ))}
-        </ul>
-      )}
-
-      {/* Paginação */}
-      {filtered.length > page * PAGE_SIZE && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            {Math.min(page * PAGE_SIZE, filtered.length)} de {filtered.length} transações
-          </p>
-          <button onClick={() => setPage((p) => p + 1)} className="text-xs text-primary hover:underline font-medium">
-            Carregar mais ({filtered.length - page * PAGE_SIZE} restantes)
-          </button>
-        </div>
+        <VirtualList
+          items={filtered}
+          selectedIds={selectedIds}
+          onEdit={onEdit}
+          onDelete={(tx) => setDeleteTarget(tx)}
+          onSplit={(tx) => setSplitTarget(tx)}
+          onToggleSelect={toggleSelect}
+        />
       )}
 
       {/* Split dialog */}
@@ -280,6 +316,89 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
   )
 }
 
+// ─── Virtual List ────────────────────────────────────────────
+function VirtualList({
+  items, selectedIds, onEdit, onDelete, onSplit, onToggleSelect,
+}: {
+  items: import('@/shared/types').Transaction[]
+  selectedIds: Set<string>
+  onEdit: (tx: import('@/shared/types').Transaction) => void
+  onDelete: (tx: import('@/shared/types').Transaction) => void
+  onSplit: (tx: import('@/shared/types').Transaction) => void
+  onToggleSelect: (id: string) => void
+}) {
+  const parentRef = useRef<HTMLDivElement>(null)
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 64,
+    overscan: 10,
+  })
+
+  return (
+    <div ref={parentRef} style={{ maxHeight: '600px', overflowY: 'auto' }} className="scrollbar-thin">
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualizer.getVirtualItems().map((vItem) => {
+          const tx = items[vItem.index]
+          return (
+            <div
+              key={tx.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${vItem.start}px)`,
+              }}
+            >
+              <TransactionItem
+                transaction={tx}
+                selected={selectedIds.has(tx.id)}
+                onEdit={() => onEdit(tx)}
+                onDelete={() => onDelete(tx)}
+                onSplit={() => onSplit(tx)}
+                onToggleSelect={() => onToggleSelect(tx.id)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// Mapa de cores por categoria — pastel harmonioso
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  'Mercado':       { bg: '#DCFCE7', text: '#166534' },
+  'Alimentação':   { bg: '#FEF3C7', text: '#92400E' },
+  'Transporte':    { bg: '#DBEAFE', text: '#1E40AF' },
+  'Moradia':       { bg: '#F3E8FF', text: '#6B21A8' },
+  'Saúde':         { bg: '#FFE4E6', text: '#9F1239' },
+  'Assinaturas':   { bg: '#E0E7FF', text: '#3730A3' },
+  'Roupas':        { bg: '#FCE7F3', text: '#9D174D' },
+  'Beleza':        { bg: '#FDF2F8', text: '#BE185D' },
+  'Presente':      { bg: '#FEF9C3', text: '#854D0E' },
+  'Pets':          { bg: '#ECFDF5', text: '#065F46' },
+  'Viagem':        { bg: '#E0F2FE', text: '#0369A1' },
+  'Educação':      { bg: '#EFF6FF', text: '#1D4ED8' },
+  'Lazer':         { bg: '#FFF7ED', text: '#C2410C' },
+  'Serviços':      { bg: '#F1F5F9', text: '#334155' },
+  'Salário':       { bg: '#DCFCE7', text: '#15803D' },
+  'Freelance':     { bg: '#D1FAE5', text: '#065F46' },
+  'Investimentos': { bg: '#ECFDF5', text: '#047857' },
+  'Rendimentos':   { bg: '#F0FDF4', text: '#166534' },
+  'Bônus':         { bg: '#FEF9C3', text: '#713F12' },
+  'Reembolso':     { bg: '#E0F2FE', text: '#075985' },
+}
+
+function getCategoryColor(category: string): { bg: string; text: string } {
+  const clean = category.replace(/^\p{Emoji}\s*/u, '').trim()
+  for (const [key, colors] of Object.entries(CATEGORY_COLORS)) {
+    if (clean.toLowerCase().includes(key.toLowerCase())) return colors
+  }
+  return { bg: '#F1F5F9', text: '#475569' }
+}
+
 // ─── Transaction item ─────────────────────────────────────────
 function TransactionItem({
   transaction: tx, selected, onEdit, onDelete, onSplit, onToggleSelect,
@@ -292,6 +411,10 @@ function TransactionItem({
   onToggleSelect: () => void
 }) {
   const isIncome = tx.type === 'income'
+  const catColors = getCategoryColor(tx.category)
+  const emoji = extractCategoryEmoji(tx.category)
+  const catName = tx.category.replace(/^\p{Emoji}\s*/u, '').trim()
+
   return (
     <li className={cn(
       'group flex items-center gap-2.5 p-3 rounded-lg transition-colors',
@@ -309,19 +432,29 @@ function TransactionItem({
         {selected && <Check className="h-2.5 w-2.5 text-white" />}
       </button>
 
-      <div className={cn(
-        'flex items-center justify-center w-9 h-9 rounded-full text-base shrink-0',
-        isIncome ? 'bg-[hsl(var(--income)/0.12)]' : 'bg-[hsl(var(--expense)/0.12)]'
-      )}>
-        {extractCategoryEmoji(tx.category)}
+      {/* Ícone com cor da categoria */}
+      <div
+        className="flex items-center justify-center w-9 h-9 rounded-full text-base shrink-0"
+        style={{ background: catColors.bg }}
+      >
+        {emoji}
       </div>
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{tx.description}</p>
-        <p className="text-xs text-muted-foreground">
-          {tx.category.replace(/^\p{Emoji}\s*/u, '')} · {formatDate(tx.date)}
-          {tx.payment_method && ` · ${tx.payment_method}`}
-        </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {/* Pill de categoria com cor própria */}
+          <span
+            className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+            style={{ background: catColors.bg, color: catColors.text }}
+          >
+            {catName}
+          </span>
+          <span className="text-xs text-muted-foreground truncate">
+            {formatDate(tx.date)}
+            {tx.payment_method && ` · ${tx.payment_method}`}
+          </span>
+        </div>
       </div>
 
       <span className={cn('font-mono text-sm font-semibold shrink-0', isIncome ? 'amount-income' : 'amount-expense')}>
@@ -406,6 +539,7 @@ function SplitDialog({
 
       qc.invalidateQueries({ queryKey: queryKeys.transactions.all(user?.id ?? '') })
       qc.invalidateQueries({ queryKey: queryKeys.sharedExpenses.pending(user?.id ?? '') })
+      qc.invalidateQueries({ queryKey: queryKeys.analytics.monthly(user?.id ?? '') })
       toast.success(isBulk
         ? `${txsToSplit.length} despesas divididas com sucesso!`
         : 'Despesa dividida com sucesso!'

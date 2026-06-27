@@ -1,0 +1,39 @@
+feat: aplica identidade visual Raxo em telas restantes e corrige bugs críticos
+
+Identidade visual
+- Substitui ícone antigo (Compass) pelo símbolo % do Raxo em
+  ErrorBoundary, Onboarding e SplashScreen
+- Redesenha InvitePage com logo completo, header azul com textura
+  de marca e avatar flutuante sobre o card
+- Aplica ícone % nos empty states de SearchPage (antes era emoji
+  genérico de lupa)
+- Adiciona toast de celebração em lime ao atingir 100% de uma meta
+  financeira em Goals
+- Gera favicon.svg e ferramenta auxiliar para exportar
+  icon-192.png / icon-512.png do PWA
+
+Correções de bugs
+- Conecta AvatarCropModal ao fluxo de upload em Profile e
+  Onboarding — corrige distorção de fotos não quadradas
+- Corrige cálculo de crop para usar comportamento real de
+  "object-fit: cover" sem esmagar/alongar a imagem
+- Ajusta useAvatarUpload para aceitar Blob já recortado sem
+  reprocessar, e simplifica policies do bucket avatars no Supabase
+- Corrige fix allShared -> allTxs em FriendProfile
+- Resolve erro "Can't find variable: Search" em ImportPage
+  (import faltante do ícone)
+- Resolve erro "Can't find variable: AvatarImage" em
+  NotificationPanel (import faltante)
+- Corrige conflito de nome `count` no guard anti-duplicata de
+  useImport (renomeado para existingCount)
+
+Melhorias de UX
+- Redesenha header da página de amizade (FriendProfile): avatar,
+  saldo e ação de cobrar unificados dentro do card azul, com
+  estatísticas relacionais (transações, aprovadas, pendentes,
+  categoria mais comum) e tempo de amizade
+- Redesenha toolbar de seleção em lote no TransactionList,
+  substituindo link de texto por checkbox visual integrado
+- Substitui dropdown de ordenação por botões de toggle compactos
+
+Refs: identidade visual Raxo, correção de avatar/crop, FriendProfile v2

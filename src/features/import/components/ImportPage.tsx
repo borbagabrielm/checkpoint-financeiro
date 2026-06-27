@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Upload, AlertCircle, Loader2, Check, History, Trash2, AlertTriangle } from 'lucide-react'
+import { Upload, AlertCircle, Loader2, Check, History, Trash2, AlertTriangle, Search } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
@@ -30,6 +30,7 @@ export default function ImportPage() {
   const [selectedBank, setSelectedBank] = useState<BankId | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [historySearch, setHistorySearch] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [billingMonth, setBillingMonth] = useState(() => {
     const d = new Date()
@@ -61,34 +62,61 @@ export default function ImportPage() {
         {/* Histórico */}
         {showHistory && (
           <Card>
-            <CardHeader><CardTitle className="text-sm">Importações anteriores</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center justify-between">
+                Importações anteriores
+                <span className="text-xs font-normal text-muted-foreground">
+                  {(historyQuery.data ?? []).length} no total
+                </span>
+              </CardTitle>
+              <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou banco..."
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  className="pl-8 h-8 text-xs"
+                />
+              </div>
+            </CardHeader>
             <CardContent>
               {historyQuery.isLoading ? (
                 <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (historyQuery.data ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">Nenhuma importação ainda.</p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {(historyQuery.data ?? []).map((s) => (
-                    <li key={s.id} className="flex items-center gap-3 py-2.5">
-                      <div className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: BANKS.find(b => b.id === s.bank_id)?.color ?? '#888' }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{s.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(s.created_at)} · {s.transaction_count} transações
-                          {s.failed_count > 0 && <span className="text-destructive"> · {s.failed_count} falhas</span>}
-                        </p>
-                      </div>
-                      <Badge variant="secondary" className="text-xs shrink-0">{s.format.toUpperCase()}</Badge>
-                      <button onClick={() => setDeleteTarget(s.id)}
-                        className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              ) : (() => {
+                const filtered = (historyQuery.data ?? []).filter((s) =>
+                  !historySearch ||
+                  s.name.toLowerCase().includes(historySearch.toLowerCase()) ||
+                  s.bank_id.toLowerCase().includes(historySearch.toLowerCase())
+                )
+                return filtered.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum resultado para "{historySearch}"
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {filtered.map((s) => (
+                      <li key={s.id} className="flex items-center gap-3 py-2.5">
+                        <div className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: BANKS.find(b => b.id === s.bank_id)?.color ?? '#888' }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{s.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(s.created_at)} · {s.transaction_count} transações
+                            {s.failed_count > 0 && <span className="text-destructive"> · {s.failed_count} falhas</span>}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-xs shrink-0">{s.format.toUpperCase()}</Badge>
+                        <button onClick={() => setDeleteTarget(s.id)}
+                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              })()}
             </CardContent>
           </Card>
         )}

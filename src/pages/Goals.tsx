@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { Plus, Target, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
@@ -50,8 +51,26 @@ export default function GoalsPage() {
   const saveProgress = (goal: FinancialGoal) => {
     if (!editingProgress || editingProgress.id !== goal.id) return
     const amount = parseFloat(editingProgress.value.replace(',', '.')) || 0
+
+    const wasIncomplete = goal.current_amount < goal.target_amount
+    const isNowComplete = amount >= goal.target_amount
+
     updateProgress.mutate({ id: goal.id, amount })
     setEditingProgress(null)
+
+    // Celebra apenas na transição de incompleta -> completa
+    if (wasIncomplete && isNowComplete) {
+      toast.success(`Meta "${goal.title}" atingida! 🎉`, {
+        description: 'Parabéns por chegar lá. Hora de criar a próxima.',
+        duration: 5000,
+        style: {
+          background: '#AAFF47',
+          color: '#0A0A0A',
+          border: 'none',
+          fontWeight: 600,
+        },
+      })
+    }
   }
 
   // Ordena: incompletas primeiro, depois por prazo
@@ -141,13 +160,17 @@ export default function GoalsPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
         </div>
       ) : goals.length === 0 ? (
-        <div className="flex flex-col items-center py-16 text-center">
-          <Target className="h-12 w-12 text-muted-foreground/30 mb-4" />
-          <p className="text-lg font-display font-semibold">Nenhuma meta ainda</p>
-          <p className="text-sm text-muted-foreground mt-1">
+        <div className="flex flex-col items-center py-16 text-center gap-3">
+          <svg viewBox="492 221 90 88" width="48" height="48" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
+            <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
+            <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
+            <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
+          </svg>
+          <p className="text-lg font-semibold">Nenhuma meta ainda</p>
+          <p className="text-sm text-muted-foreground">
             Crie sua primeira meta e acompanhe seu progresso mês a mês.
           </p>
-          <Button className="mt-4" onClick={() => setShowForm(true)}>
+          <Button className="mt-2" onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4" />
             Criar primeira meta
           </Button>
@@ -157,6 +180,7 @@ export default function GoalsPage() {
           {sorted.map((goal) => {
             const pct = clampPercentage((goal.current_amount / goal.target_amount) * 100)
             const isDone = goal.current_amount >= goal.target_amount
+            const justCompleted = isDone && editingProgress === null && goal.current_amount > 0
             const remaining = goal.target_amount - goal.current_amount
             const isEditing = editingProgress?.id === goal.id
 
@@ -200,35 +224,50 @@ export default function GoalsPage() {
                     </div>
                   </div>
 
-                  {/* Barra de progresso */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span className={cn('font-mono font-semibold', isDone ? 'text-[hsl(var(--income))]' : 'text-foreground')}>
+                  {/* Barra de progresso — visual melhorado */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-baseline">
+                      <span className={cn('text-xl font-bold font-mono tracking-tight',
+                        isDone ? 'text-[hsl(var(--income))]' : 'text-foreground')}>
                         {formatCurrency(goal.current_amount)}
                       </span>
-                      <span className="text-muted-foreground font-mono">
-                        {formatCurrency(goal.target_amount)} · {pct.toFixed(0)}%
+                      <span className="text-xs text-muted-foreground font-mono">
+                        de {formatCurrency(goal.target_amount)}
                       </span>
                     </div>
-                    <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+                    {/* Barra grossa com cor semântica */}
+                    <div className="h-3 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className={cn('h-full rounded-full transition-all duration-700',
-                          isDone ? 'bg-[hsl(var(--income))]' : pct >= 75 ? 'bg-primary' : pct >= 40 ? 'bg-amber-500' : 'bg-muted-foreground/60'
-                        )}
-                        style={{ width: `${pct}%` }}
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${pct}%`,
+                          background: isDone
+                            ? '#22A800'
+                            : pct >= 75 ? '#AAFF47'
+                            : pct >= 40 ? '#3B3BFF'
+                            : '#888',
+                        }}
                       />
                     </div>
-                    {!isDone && (
-                      <p className="text-xs text-muted-foreground">
-                        Faltam <span className="font-mono font-medium text-foreground">{formatCurrency(remaining)}</span>
-                      </p>
-                    )}
-                    {isDone && (
-                      <p className="text-xs text-[hsl(var(--income))] font-medium">✓ Meta atingida!</p>
-                    )}
+                    <div className="flex justify-between items-center">
+                      <span className={cn('text-xs font-bold',
+                        isDone ? 'text-[hsl(var(--income))]'
+                        : pct >= 75 ? 'text-[hsl(var(--income))]'
+                        : 'text-primary')}>
+                        {pct.toFixed(0)}%
+                      </span>
+                      {!isDone && (
+                        <span className="text-xs text-muted-foreground">
+                          Faltam <span className="font-mono font-medium text-foreground">{formatCurrency(remaining)}</span>
+                        </span>
+                      )}
+                      {isDone && (
+                        <span className="text-xs text-[hsl(var(--income))] font-semibold">✓ Meta atingida!</span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Atualizar progresso */}
+                  {/* Depósito manual */}
                   <div className="flex items-center gap-2">
                     {isEditing ? (
                       <>
@@ -245,10 +284,11 @@ export default function GoalsPage() {
                               if (e.key === 'Escape') setEditingProgress(null)
                             }}
                             className="h-8 pl-8 text-sm font-mono"
+                            placeholder="Novo total acumulado"
                           />
                         </div>
                         <button onClick={() => saveProgress(goal)}
-                          className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                          className="p-1.5 rounded-md bg-[#AAFF47] text-[#0A0A0A] hover:opacity-85 transition-opacity">
                           <Check className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => setEditingProgress(null)}
@@ -259,10 +299,15 @@ export default function GoalsPage() {
                     ) : (
                       <button
                         onClick={() => setEditingProgress({ id: goal.id, value: goal.current_amount.toString() })}
-                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        className={cn(
+                          'flex items-center gap-1.5 text-xs font-medium transition-colors px-3 py-1.5 rounded-lg',
+                          isDone
+                            ? 'bg-[hsl(var(--income)/0.1)] text-[hsl(var(--income))] hover:bg-[hsl(var(--income)/0.15)]'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        )}
                       >
                         <Pencil className="h-3 w-3" />
-                        Atualizar progresso
+                        {isDone ? 'Editar progresso' : 'Registrar depósito'}
                       </button>
                     )}
                   </div>

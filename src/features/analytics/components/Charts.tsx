@@ -54,28 +54,45 @@ export function MonthlyAreaChart({ data }: { data: MonthlyStats[] }) {
   )
 }
 
-// ─── Pie Chart — categorias ───────────────────────────────────
+// ─── Pie Chart — categorias com legenda externa ──────────────
 export function CategoryPieChart({ data }: { data: CategoryBreakdown[] }) {
   if (!data?.length) return (
     <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">
       Sem dados
     </div>
   )
+  const total = data.reduce((s, d) => s + d.amount, 0)
+  // Mostra só top 6 para não poluir a legenda
+  const top = data.slice(0, 6)
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <PieChart>
-        <Pie data={data} dataKey="amount" nameKey="category" cx="50%" cy="50%"
-          innerRadius={50} outerRadius={80} paddingAngle={2}>
-          {data.map((_, i) => (
-            <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip
-          formatter={(v: number) => formatCurrency(v)}
-          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
-        />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="flex items-center gap-4">
+      <div className="shrink-0" style={{ width: 140, height: 140 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={top} dataKey="amount" nameKey="category" cx="50%" cy="50%"
+              innerRadius={36} outerRadius={58} paddingAngle={2} startAngle={90} endAngle={-270}>
+              {top.map((_, i) => (
+                <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(v: number) => formatCurrency(v)}
+              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      {/* Legenda externa com cor + nome + valor + % */}
+      <ul className="flex-1 space-y-1.5 min-w-0">
+        {top.map((item, i) => (
+          <li key={item.category} className="flex items-center gap-2 min-w-0">
+            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }} />
+            <span className="text-xs text-muted-foreground truncate flex-1">{item.category.replace(/^\p{Emoji}\s*/u, '')}</span>
+            <span className="text-xs font-mono font-medium shrink-0">{((item.amount / total) * 100).toFixed(0)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

@@ -10,16 +10,24 @@ interface Props {
   errors: FieldErrors<TransactionFormValues>
   type: 'income' | 'expense'
   categories: string[]
+  preferences?: { income_categories?: string[] }
   paymentMethods: string[]
   installmentAmount: string | null
   installments: number
 }
 
 export function BasicFields({
-  register, control, errors, type, categories, paymentMethods, installmentAmount, installments,
+  register, control, errors, type, categories, preferences, paymentMethods, installmentAmount, installments,
 }: Props) {
   // Receita → lista padrão de receitas | Despesa → categorias do usuário (preferences)
-  const categoryList = type === 'income' ? DEFAULT_INCOME_CATEGORIES : categories
+  // Despesa: usa categorias de despesa do usuário (preferences.categories)
+  // Receita: usa categorias de receita do usuário (preferences.income_categories) ou padrão
+  const categoryList = type === 'income'
+    ? (preferences?.income_categories?.length ? preferences.income_categories : DEFAULT_INCOME_CATEGORIES)
+    : (categories?.filter((c) =>
+        // Filtra qualquer categoria de receita que possa ter vazado
+        !DEFAULT_INCOME_CATEGORIES.includes(c)
+      ) ?? DEFAULT_EXPENSE_CATEGORIES)
 
   return (
     <>

@@ -71,8 +71,12 @@ export default function SearchPage() {
               {isLoading ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
               ) : results.length === 0 ? (
-                <div className="py-10 text-center">
-                  <p className="text-2xl mb-2">🔍</p>
+                <div className="py-10 text-center flex flex-col items-center gap-3">
+                  <svg viewBox="492 221 90 88" width="40" height="40" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
+                    <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
+                    <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
+                    <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
+                  </svg>
                   <p className="text-sm text-muted-foreground">Nenhuma transação encontrada para "{query}"</p>
                 </div>
               ) : (
@@ -119,10 +123,16 @@ export default function SearchPage() {
       )}
 
       {query.length === 0 && (
-        <div className="flex flex-col items-center py-16 text-center text-muted-foreground">
-          <Search className="h-12 w-12 mb-4 opacity-30" />
-          <p className="text-sm">Busque por descrição, categoria ou método de pagamento</p>
-          <p className="text-xs mt-1">Abrange todas as suas transações de todos os períodos</p>
+        <div className="flex flex-col items-center py-16 text-center gap-3">
+          <svg viewBox="492 221 90 88" width="56" height="56" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
+            <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
+            <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
+            <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
+          </svg>
+          <div>
+            <p className="text-sm text-muted-foreground">Busque por descrição, categoria ou método de pagamento</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Abrange todas as suas transações de todos os períodos</p>
+          </div>
         </div>
       )}
     </div>

@@ -55,7 +55,7 @@ export function parseInstallments(description: string): {
 
 export function toYMD(raw: string): string | null {
   if (!raw) return null
-  const s = raw.trim()
+  const s = raw.trim().replace(/^"|"$/g, '') // remove aspas residuais
 
   // OFX: 20240531 ou 20240531120000[-03:00]
   const ofxMatch = /^(\d{4})(\d{2})(\d{2})/.exec(s)

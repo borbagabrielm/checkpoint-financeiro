@@ -3,17 +3,29 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Compass, ArrowRight, Check, Camera, Loader2 } from 'lucide-react'
+import { ArrowRight, Check, Camera, Loader2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
+import { AvatarCropModal } from '@/shared/components/ui/AvatarCropModal'
 import { cn, DEFAULT_CATEGORIES, toISODate, getInitials } from '@/shared/lib/utils'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useAvatarUpload } from '@/shared/hooks/useAvatarUpload'
 import { supabase } from '@/shared/lib/supabase'
 import { queryKeys } from '@/shared/lib/queryKeys'
+
+// Ícone % do Raxo — usado nos steps de boas-vindas e conclusão
+function RaxoPercentIcon({ size = 32 }: { size?: number }) {
+  return (
+    <svg viewBox="492 221 90 88" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="#AAFF47"/>
+      <circle cx="515.62" cy="244.36" r="14.47" fill="#AAFF47"/>
+      <circle cx="568.01" cy="293.67" r="14.47" fill="#AAFF47"/>
+    </svg>
+  )
+}
 
 // ─── Steps ───────────────────────────────────────────────────
 const steps = ['Boas-vindas', 'Seu perfil', 'Primeira transação', 'Pronto!'] as const
@@ -48,6 +60,7 @@ interface Props {
 export function Onboarding({ onComplete, userId }: Props) {
   const [step, setStep] = useState(0)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
   const { add } = useTransactions()
   const { user } = useAuth()
   const { upload, uploading } = useAvatarUpload(userId ?? '')
@@ -97,17 +110,33 @@ export function Onboarding({ onComplete, userId }: Props) {
     onError: (e: Error) => toast.error(e.message),
   })
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Abre o modal de recorte em vez de subir a foto direto — evita distorção
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const url = await upload(file)
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 8MB')
+      e.target.value = ''
+      return
+    }
+    setPendingFile(file)
+    e.target.value = ''
+  }
+
+  const handleCropConfirm = async (croppedBlob: Blob) => {
+    setPendingFile(null)
+    const url = await upload(croppedBlob)
     if (url) {
       setAvatarUrl(url)
       qc.invalidateQueries({ queryKey: queryKeys.profiles.me(userId ?? '') })
     } else {
       toast.error('Erro ao fazer upload da foto')
     }
-    e.target.value = ''
   }
 
   const handleAddTransaction = async (values: z.infer<typeof txSchema>) => {
@@ -134,7 +163,7 @@ export function Onboarding({ onComplete, userId }: Props) {
           {steps.map((_, i) => (
             <div key={i} className={cn(
               'rounded-full transition-all duration-300',
-              i === step ? 'w-6 h-2 bg-primary' : i < step ? 'w-2 h-2 bg-primary/60' : 'w-2 h-2 bg-border'
+              i === step ? 'w-6 h-2 bg-[#AAFF47]' : i < step ? 'w-2 h-2 bg-[#AAFF47]/50' : 'w-2 h-2 bg-border'
             )} />
           ))}
         </div>
@@ -144,17 +173,17 @@ export function Onboarding({ onComplete, userId }: Props) {
           {/* ── Step 0: Boas-vindas ─────────────────────── */}
           {step === 0 && (
             <div className="text-center space-y-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mx-auto shadow-lg">
-                <Compass className="h-8 w-8" />
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mx-auto shadow-lg">
+                <RaxoPercentIcon size={30} />
               </div>
               <div>
-                <h1 className="text-2xl font-display font-semibold">Bem-vindo ao Raxo!</h1>
+                <h1 className="text-2xl font-semibold">Bem-vindo ao Raxo!</h1>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   Vamos configurar sua conta em poucos passos. Primeiro, personalize seu perfil.
                 </p>
               </div>
               <div className="space-y-2">
-                <Button className="w-full" onClick={() => setStep(1)}>
+                <Button className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={() => setStep(1)}>
                   Começar
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -196,9 +225,9 @@ export function Onboarding({ onComplete, userId }: Props) {
                   >
                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
                 </div>
-                <p className="text-xs text-muted-foreground">JPG, PNG ou WebP · máx. 2MB</p>
+                <p className="text-xs text-muted-foreground">JPG, PNG ou WebP · máx. 8MB</p>
               </div>
 
               <form onSubmit={profileForm.handleSubmit((d) => saveProfile.mutate(d))} className="space-y-4">
@@ -220,7 +249,7 @@ export function Onboarding({ onComplete, userId }: Props) {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={saveProfile.isPending}>
+                <Button type="submit" className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" disabled={saveProfile.isPending}>
                   {saveProfile.isPending ? 'Salvando...' : 'Salvar e continuar'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -284,7 +313,7 @@ export function Onboarding({ onComplete, userId }: Props) {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={add.isPending}>
+                <Button type="submit" className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" disabled={add.isPending}>
                   {add.isPending ? 'Adicionando...' : 'Adicionar e continuar'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -300,16 +329,16 @@ export function Onboarding({ onComplete, userId }: Props) {
           {/* ── Step 3: Pronto ──────────────────────────── */}
           {step === 3 && (
             <div className="text-center space-y-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(var(--income)/0.15)] mx-auto">
-                <Check className="h-8 w-8 text-[hsl(var(--income))]" />
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(var(--income-fill)/0.18)] mx-auto">
+                <RaxoPercentIcon size={30} />
               </div>
               <div>
-                <h2 className="text-2xl font-display font-semibold">Tudo pronto! 🎉</h2>
+                <h2 className="text-2xl font-semibold">Tudo pronto!</h2>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   Sua conta está configurada. Agora explore o dashboard, convide amigos e divida despesas.
                 </p>
               </div>
-              <Button className="w-full" onClick={() => {
+              <Button className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={() => {
                 localStorage.setItem(`onboarding_done_${userId}`, '1')
                 onComplete()
               }}>
@@ -320,6 +349,15 @@ export function Onboarding({ onComplete, userId }: Props) {
 
         </div>
       </div>
+
+      {/* Modal de recorte de avatar */}
+      {pendingFile && (
+        <AvatarCropModal
+          file={pendingFile}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setPendingFile(null)}
+        />
+      )}
     </div>
   )
 }

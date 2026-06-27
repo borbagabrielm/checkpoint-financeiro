@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import { useAuth } from '@/shared/hooks/useAuth'
+import { supabase } from '@/shared/lib/supabase'
 import { detectFormat, parseFile, readFileAsText, readFileAsTextLatin } from '../parsers'
 import {
   hashFile, checkDuplicate, saveImportSession,
@@ -188,7 +189,24 @@ export function useImport() {
             }))
           : undefined
 
-        await add.mutateAsync({
+        // Guard anti-duplicata: verifica se já existe transação idêntica no banco
+      // (mesmo user + description + date + amount) — criada em qualquer momento
+      // Diferente do SQL de limpeza, aqui não usamos janela de tempo pois
+      // estamos impedindo o insert antes de acontecer
+      const { count: existingCount } = await supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('description', tx.description)
+        .eq('date', tx.date)
+        .eq('amount', totalAmount)
+
+      if (existingCount && existingCount > 0) {
+        failed.push({ description: tx.description, reason: 'Duplicata ignorada — transação já existe no banco' })
+        continue
+      }
+
+      await add.mutateAsync({
           description: tx.description,
           amount: totalAmount,
           type: tx.type,

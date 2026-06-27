@@ -198,54 +198,57 @@ function SharedExpenseItem({
   loading: boolean
 }) {
   return (
-    <li className="px-5 py-4 space-y-3 hover:bg-secondary/30 transition-colors">
-      <div className="flex items-start gap-3">
-        <div className="relative shrink-0">
-          <Avatar className="h-10 w-10">
-            {notif.fromAvatar && <AvatarImage src={notif.fromAvatar} />}
-            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-              {getInitials(notif.fromName)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary border-2 border-card">
-            <SplitSquareHorizontal className="h-2.5 w-2.5 text-white" />
-          </span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium leading-snug">
-            <span className="text-foreground">{notif.fromName}</span>
-            <span className="text-muted-foreground"> compartilhou uma despesa</span>
-          </p>
-          <p className="text-sm text-foreground mt-0.5 truncate">{notif.description}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Sua parte:{' '}
-            <span className="font-mono font-semibold text-[hsl(var(--expense))]">
+    <li className="px-4 py-3">
+      <div className="rounded-xl overflow-hidden border border-primary/20">
+        {/* Header azul estilo card */}
+        <div className="bg-primary px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-7 w-7 shrink-0 ring-1 ring-white/20">
+              {notif.fromAvatar && <AvatarImage src={notif.fromAvatar} />}
+              <AvatarFallback className="text-[10px] bg-white/20 text-white font-bold">
+                {getInitials(notif.fromName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-[11px] text-white/60 leading-none mb-0.5">Divisão pendente</p>
+              <p className="text-sm font-semibold text-white truncate">{notif.fromName}</p>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-lg font-bold text-[#AAFF47] font-mono leading-none">
               {formatCurrency(notif.amount)}
-            </span>
-            {' · '}{formatDate(notif.at)}
-          </p>
+            </p>
+            <p className="text-[10px] text-white/50 mt-0.5">sua parte</p>
+          </div>
         </div>
-      </div>
-      <div className="flex gap-2 ml-12">
-        <Button
-          size="sm"
-          className="flex-1 h-8 text-xs font-bold bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85"
-          onClick={onApprove}
-          disabled={loading}
-        >
-          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-          Aprovar
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1 h-8 text-xs hover:border-destructive hover:text-destructive"
-          onClick={onReject}
-          disabled={loading}
-        >
-          <X className="h-3 w-3" />
-          Recusar
-        </Button>
+        {/* Body */}
+        <div className="bg-card px-4 py-3 space-y-2.5">
+          <div>
+            <p className="text-sm font-medium truncate">{notif.description}</p>
+            <p className="text-xs text-muted-foreground">{formatDate(notif.at)}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1 h-8 text-xs font-bold bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85"
+              onClick={onApprove}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+              Aprovar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 h-8 text-xs hover:border-destructive hover:text-destructive"
+              onClick={onReject}
+              disabled={loading}
+            >
+              <X className="h-3 w-3" />
+              Recusar
+            </Button>
+          </div>
+        </div>
       </div>
     </li>
   )

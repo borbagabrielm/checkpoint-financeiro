@@ -142,6 +142,7 @@ export function TransactionForm({ editing, onClose }: Props) {
         errors={errors}
         type={type}
         categories={preferences.categories}
+        preferences={preferences}
         paymentMethods={paymentMethods}
         installmentAmount={installmentAmount}
         installments={installments}

@@ -91,6 +91,16 @@ export default function ApprovalsPage() {
         <p className="page-subtitle">Despesas compartilhadas aguardando sua confirmação</p>
       </div>
 
+      {/* Botão selecionar todas */}
+      {pending.length > 0 && selectedIds.size === 0 && (
+        <button
+          onClick={() => setSelectedIds(new Set(pending.map((p) => p.id)))}
+          className="text-xs text-primary font-medium hover:underline self-start"
+        >
+          Selecionar todas ({pending.length})
+        </button>
+      )}
+
       {/* Toolbar de seleção em lote */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-2 rounded-xl border border-[#AAFF47]/40 bg-[#AAFF47]/5 p-3">

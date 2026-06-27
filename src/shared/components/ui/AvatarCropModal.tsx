@@ -19,8 +19,17 @@ export function AvatarCropModal({ file, onConfirm, onCancel }: Props) {
   const [dragging, setDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imgSrc] = useState(() => URL.createObjectURL(file))
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
 
   const CROP_SIZE = 260
+
+  // Base de exibição: a imagem é mostrada cobrindo o quadrado de crop
+  // (object-fit: cover, sem distorcer proporção) — a menor dimensão natural
+  // define a escala 1:1, igual ao comportamento de "cover" do CSS.
+  const baseDisplaySize = naturalSize
+    ? CROP_SIZE * Math.max(naturalSize.w, naturalSize.h) / Math.min(naturalSize.w, naturalSize.h)
+    : CROP_SIZE
+  const isLandscape = naturalSize ? naturalSize.w >= naturalSize.h : true
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragging(true)
@@ -46,20 +55,22 @@ export function AvatarCropModal({ file, onConfirm, onCancel }: Props) {
 
   const handleConfirm = () => {
     const img = imgRef.current
-    if (!img) return
+    if (!img || !naturalSize) return
 
     const canvas = document.createElement('canvas')
     canvas.width = 400
     canvas.height = 400
     const ctx = canvas.getContext('2d')!
 
-    // Calcular proporção entre tamanho natural e exibido
-    const displaySize = CROP_SIZE * scale
-    const ratio = img.naturalWidth / displaySize
+    // A imagem exibida tem largura/altura = baseDisplaySize * scale (em modo cover,
+    // a menor dimensão natural corresponde a CROP_SIZE * scale).
+    // ratio converte pixels de tela -> pixels da imagem original.
+    const minNatural = Math.min(naturalSize.w, naturalSize.h)
+    const displayMinSide = CROP_SIZE * scale
+    const ratio = minNatural / displayMinSide
 
-    // Centro do crop na imagem original
-    const centerX = img.naturalWidth / 2 - offset.x * ratio
-    const centerY = img.naturalHeight / 2 - offset.y * ratio
+    const centerX = naturalSize.w / 2 - offset.x * ratio
+    const centerY = naturalSize.h / 2 - offset.y * ratio
     const cropRadius = (CROP_SIZE / 2) * ratio
 
     ctx.drawImage(
@@ -108,6 +119,10 @@ export function AvatarCropModal({ file, onConfirm, onCancel }: Props) {
                 src={imgSrc}
                 alt="crop preview"
                 draggable={false}
+                onLoad={(e) => {
+                  const t = e.currentTarget
+                  setNaturalSize({ w: t.naturalWidth, h: t.naturalHeight })
+                }}
                 style={{
                   position: 'absolute',
                   left: '50%',
@@ -115,9 +130,10 @@ export function AvatarCropModal({ file, onConfirm, onCancel }: Props) {
                   transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${scale})`,
                   maxWidth: 'none',
                   maxHeight: 'none',
-                  width: CROP_SIZE,
-                  height: 'auto',
-                  objectFit: 'cover',
+                  // object-fit: cover manual — mantém proporção original,
+                  // a menor dimensão natural vira CROP_SIZE, a maior cresce proporcionalmente
+                  width: isLandscape ? 'auto' : CROP_SIZE,
+                  height: isLandscape ? CROP_SIZE : 'auto',
                   userSelect: 'none',
                   pointerEvents: 'none',
                 }}
@@ -155,7 +171,7 @@ export function AvatarCropModal({ file, onConfirm, onCancel }: Props) {
               <X className="h-4 w-4" />
               Cancelar
             </Button>
-            <Button onClick={handleConfirm} className="flex-1">
+            <Button onClick={handleConfirm} disabled={!naturalSize} className="flex-1">
               <Check className="h-4 w-4" />
               Usar foto
             </Button>
