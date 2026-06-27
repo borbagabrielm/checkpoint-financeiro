@@ -21,7 +21,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!
-const vapidSubject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:borbagabrielm@gmail.com'
+const vapidSubject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:contato@raxo.app'
 
 webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
 
@@ -42,6 +42,22 @@ interface PushPayload {
 Deno.serve(async (req) => {
   try {
     const payload: PushPayload = await req.json()
+
+    // Modo debug — chame com { "debug": true } para confirmar
+    // qual VAPID_PUBLIC_KEY está realmente configurada no secret,
+    // sem expor a chave inteira (só os 20 primeiros caracteres,
+    // suficiente para comparar com o valor esperado)
+    if ((payload as any).debug === true) {
+      return new Response(
+        JSON.stringify({
+          vapidPublicKeyPrefix: vapidPublicKey?.slice(0, 20) ?? 'AUSENTE',
+          vapidPublicKeyLength: vapidPublicKey?.length ?? 0,
+          vapidSubject: vapidSubject,
+          vapidPrivateKeyLength: vapidPrivateKey?.length ?? 0,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Normaliza para uma lista única, aceitando os dois formatos de entrada
     const recipientIds = payload.recipientUserIds?.length

@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowRight, Check, Camera, Loader2 } from 'lucide-react'
+import { ArrowRight, Check, Camera, Loader2, Bell, BellRing } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
@@ -13,6 +13,7 @@ import { cn, DEFAULT_CATEGORIES, toISODate, getInitials } from '@/shared/lib/uti
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useAvatarUpload } from '@/shared/hooks/useAvatarUpload'
+import { usePushSubscription } from '@/shared/hooks/usePushSubscription'
 import { supabase } from '@/shared/lib/supabase'
 import { queryKeys } from '@/shared/lib/queryKeys'
 
@@ -28,7 +29,7 @@ function RaxoPercentIcon({ size = 32 }: { size?: number }) {
 }
 
 // ─── Steps ───────────────────────────────────────────────────
-const steps = ['Boas-vindas', 'Seu perfil', 'Primeira transação', 'Pronto!'] as const
+const steps = ['Boas-vindas', 'Seu perfil', 'Primeira transação', 'Notificações', 'Pronto!'] as const
 
 // ─── Schemas ─────────────────────────────────────────────────
 const profileSchema = z.object({
@@ -64,6 +65,7 @@ export function Onboarding({ onComplete, userId }: Props) {
   const { add } = useTransactions()
   const { user } = useAuth()
   const { upload, uploading } = useAvatarUpload(userId ?? '')
+  const { status: pushStatus, loading: pushLoading, subscribe, isSupported: pushSupported } = usePushSubscription()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const qc = useQueryClient()
 
@@ -148,10 +150,14 @@ export function Onboarding({ onComplete, userId }: Props) {
     }
   }
 
-  const skipOnboarding = () => {
+  // Pula o ONBOARDING INTEIRO — usado só no step 0 (decisão de não fazer nada)
+  const skipAll = () => {
     localStorage.setItem(`onboarding_done_${userId}`, '1')
     onComplete()
   }
+
+  // Pula só a ETAPA atual, avança pro próximo step — usado nos demais steps
+  const skipStep = () => setStep((s) => s + 1)
 
   const displayName = profileForm.watch('display_name') || user?.user_metadata?.full_name || user?.email
 
@@ -187,7 +193,7 @@ export function Onboarding({ onComplete, userId }: Props) {
                   Começar
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <button onClick={skipOnboarding}
+                <button onClick={skipAll}
                   className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
                   Pular por agora
                 </button>
@@ -255,9 +261,9 @@ export function Onboarding({ onComplete, userId }: Props) {
                 </Button>
               </form>
 
-              <button onClick={() => setStep(2)}
+              <button onClick={skipStep}
                 className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1">
-                Pular
+                Pular esta etapa
               </button>
             </div>
           )}
@@ -319,15 +325,67 @@ export function Onboarding({ onComplete, userId }: Props) {
                 </Button>
               </form>
 
-              <button onClick={skipOnboarding}
+              <button onClick={skipStep}
                 className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1">
-                Pular
+                Pular esta etapa
               </button>
             </div>
           )}
 
-          {/* ── Step 3: Pronto ──────────────────────────── */}
+          {/* ── Step 3: Notificações push ───────────────── */}
           {step === 3 && (
+            <div className="text-center space-y-6">
+              <div className={cn(
+                'flex items-center justify-center w-16 h-16 rounded-2xl mx-auto shadow-lg',
+                pushStatus === 'subscribed' ? 'bg-[hsl(var(--income-fill)/0.2)]' : 'bg-primary'
+              )}>
+                {pushStatus === 'subscribed'
+                  ? <BellRing className="h-7 w-7 text-[hsl(var(--income))]" />
+                  : <Bell className="h-7 w-7 text-white" />
+                }
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">Ative as notificações</h2>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {pushStatus === 'subscribed'
+                    ? 'Notificações ativadas! Você será avisado quando um amigo dividir uma despesa com você, mesmo com o app fechado.'
+                    : 'Saiba na hora quando um amigo dividir uma despesa com você — mesmo com o app fechado.'}
+                </p>
+              </div>
+
+              {!pushSupported ? (
+                <p className="text-xs text-muted-foreground">
+                  Notificações não são suportadas neste navegador/dispositivo.
+                </p>
+              ) : pushStatus === 'subscribed' ? (
+                <Button className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={skipStep}>
+                  Continuar
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold"
+                    onClick={async () => {
+                      await subscribe()
+                      setStep(4)
+                    }}
+                    disabled={pushLoading}
+                  >
+                    {pushLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                    {pushLoading ? 'Ativando...' : 'Ativar notificações'}
+                  </Button>
+                  <button onClick={skipStep}
+                    className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1">
+                    Pular esta etapa
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Step 4: Pronto ──────────────────────────── */}
+          {step === 4 && (
             <div className="text-center space-y-6">
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(var(--income-fill)/0.18)] mx-auto">
                 <RaxoPercentIcon size={30} />
