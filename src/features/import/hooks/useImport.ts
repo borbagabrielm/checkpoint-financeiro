@@ -17,6 +17,7 @@ type ImportStep = 'select' | 'naming' | 'review' | 'importing' | 'done'
 export interface FailedImport {
   description: string
   error: string
+  reason?: string
 }
 
 export function useImport() {
@@ -202,7 +203,11 @@ export function useImport() {
         .eq('amount', totalAmount)
 
       if (existingCount && existingCount > 0) {
-        failed.push({ description: tx.description, reason: 'Duplicata ignorada — transação já existe no banco' })
+        failed.push({
+          description: tx.description,
+          error: 'Duplicata ignorada — transação já existe no banco',
+          reason: 'Duplicata ignorada — transação já existe no banco',
+        })
         continue
       }
 
