@@ -1,9 +1,36 @@
-fix: corrige erro de build do TypeScript no useImport
+feat: adiciona suporte a XLSX do Itaú, push notifications e melhorias de onboarding
 
-- Adiciona campo opcional `reason` na interface FailedImport,
-  resolvendo erro de build "Object literal may only specify known
-  properties" no guard anti-duplicata da importação
-- Garante que o campo `error` (obrigatório) também é preenchido
-  no push de duplicata ignorada
-- Move favicon.svg para public/ para que o Vite o inclua
-  corretamente no build de produção
+Importação XLSX (Itaú)
+- Novo parser xlsxParser.ts para planilhas .xlsx do Itaú
+  (formato novo que substituiu o CSV)
+- Lê 14 linhas de cabeçalho, detecta parcelas na coluna "Parcelamento",
+  filtra encargos/juros/multas automaticamente
+- Arquivo lido como ArrayBuffer (binário), sem dependência de encoding
+- detectFormat() reconhece .xlsx, parseFileBuffer() roteia para o parser
+- BankId do Itaú atualizado: supportsCSV=false, supportsXLSX=true
+- Input de importação aceita .xlsx e exibe badge do formato correto por banco
+
+Push Notifications
+- Infra completa: tabela push_subscriptions com RLS, trigger SQL automático
+  em shared_transactions, Edge Function send-push deployada
+- Suporte a destinatário único (recipientUserId) e múltiplos (recipientUserIds)
+- Service Worker atualizado com handlers de push e notificationclick
+- Hook usePushSubscription com gerenciamento de permissão, subscription e
+  feedback de erro visível (antes era só console.error silencioso)
+- PushNotificationToggle: toggle visual com estado dinâmico e exibição de erro
+- Toggle adicionado na tab Aparência do Settings
+- Remove subscriptions inválidas (410/404) automaticamente após envio
+
+Onboarding
+- Novo step 3 "Notificações push" entre "Primeira transação" e "Pronto"
+- Botão "Ativar notificações" só avança de step se subscribe() retornar
+  sucesso real (antes avançava imediatamente, engolindo o popup)
+- Fix crítico: "Pular" nos steps intermediários agora avança só a etapa
+  (skipStep), não fecha o onboarding inteiro (era chamando skipAll)
+- Progress dots atualizados para 5 steps
+- Avatar crop modal conectado ao onboarding (igual já estava no Profile)
+
+Correções diversas
+- usePushSubscription expõe campo error para feedback visível ao usuário
+- Chaves VAPID regeneradas com createECDH + padding de 32 bytes garantido
+  (correção do BadJwtToken no Apple WebPush)

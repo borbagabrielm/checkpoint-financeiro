@@ -3,7 +3,7 @@ import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { supabase } from '@/shared/lib/supabase'
-import { detectFormat, parseFile, readFileAsText, readFileAsTextLatin } from '../parsers'
+import { detectFormat, parseFile, parseFileBuffer, readFileAsText, readFileAsTextLatin, readFileAsBuffer } from '../parsers'
 import {
   hashFile, checkDuplicate, saveImportSession,
 } from '../services/importSessionService'
@@ -48,14 +48,27 @@ export function useImport() {
 
     const detectedFormat = detectFormat(file.name)
     if (!detectedFormat) {
-      setError('Formato não suportado. Use arquivos .ofx, .qfx ou .csv')
+      setError('Formato não suportado. Use arquivos .ofx, .qfx, .csv ou .xlsx')
       return
     }
 
     try {
-      let content = await readFileAsText(file)
-      if (content.includes('â€') || content.includes('Ã£')) {
-        content = await readFileAsTextLatin(file)
+      let result: ParseResult
+      let content = ''
+
+      if (detectedFormat === 'xlsx') {
+        // XLSX é binário — lê como ArrayBuffer e usa parser dedicado
+        const buffer = await readFileAsBuffer(file)
+        result = parseFileBuffer(buffer, detectedFormat, selectedBankId)
+        // Hash simplificado para XLSX (usa nome + tamanho, sem ler como texto)
+        content = `${file.name}-${file.size}-${file.lastModified}`
+      } else {
+        // OFX e CSV são texto
+        content = await readFileAsText(file)
+        if (content.includes('â€') || content.includes('Ã£')) {
+          content = await readFileAsTextLatin(file)
+        }
+        result = parseFile(content, detectedFormat, selectedBankId)
       }
 
       // Verificar duplicata
@@ -64,11 +77,8 @@ export function useImport() {
         const existing = await checkDuplicate(user.id, hash)
         if (existing) {
           setDuplicateSession({ name: existing.name, date: existing.created_at })
-          // Não bloqueia — apenas avisa, usuário pode prosseguir
         }
       }
-
-      const result = parseFile(content, detectedFormat, selectedBankId)
       if (!result.transactions.length && !result.warnings.length) {
         setError('Nenhuma transação encontrada no arquivo.')
         return

@@ -24,6 +24,7 @@ export function usePushSubscription() {
   const { user } = useAuth()
   const [status, setStatus] = useState<PushStatus>('default')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const checkStatus = useCallback(async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -41,11 +42,18 @@ export function usePushSubscription() {
 
   // Pede permissão, cria a subscription e salva no Supabase
   const subscribe = useCallback(async (): Promise<boolean> => {
+    setError(null)
+
     if (!VAPID_PUBLIC_KEY) {
-      console.error('[usePushSubscription] VITE_VAPID_PUBLIC_KEY não configurada')
+      const msg = 'Configuração de notificações ausente. Avise o desenvolvedor (VITE_VAPID_PUBLIC_KEY não definida).'
+      console.error('[usePushSubscription]', msg)
+      setError(msg)
       return false
     }
-    if (!user?.id) return false
+    if (!user?.id) {
+      setError('Você precisa estar logado para ativar notificações.')
+      return false
+    }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       setStatus('unsupported')
       return false
@@ -56,6 +64,9 @@ export function usePushSubscription() {
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
         setStatus(permission === 'denied' ? 'denied' : 'default')
+        if (permission === 'default') {
+          setError('Permissão não concedida. Tente novamente.')
+        }
         return false
       }
 
@@ -70,7 +81,7 @@ export function usePushSubscription() {
       }
 
       const subJson = sub.toJSON()
-      const { error } = await supabase.from('push_subscriptions').upsert(
+      const { error: dbError } = await supabase.from('push_subscriptions').upsert(
         {
           user_id: user.id,
           endpoint: subJson.endpoint!,
@@ -81,15 +92,18 @@ export function usePushSubscription() {
         { onConflict: 'endpoint' }
       )
 
-      if (error) {
-        console.error('[usePushSubscription] erro ao salvar subscription:', error.message)
+      if (dbError) {
+        console.error('[usePushSubscription] erro ao salvar subscription:', dbError.message)
+        setError('Erro ao salvar notificação. Tente novamente.')
         return false
       }
 
       setStatus('subscribed')
       return true
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido ao ativar notificações'
       console.error('[usePushSubscription] erro ao subscrever:', err)
+      setError(msg)
       return false
     } finally {
       setLoading(false)
@@ -112,5 +126,5 @@ export function usePushSubscription() {
     }
   }, [])
 
-  return { status, loading, subscribe, unsubscribe, isSupported: status !== 'unsupported' }
+  return { status, loading, error, subscribe, unsubscribe, isSupported: status !== 'unsupported' }
 }

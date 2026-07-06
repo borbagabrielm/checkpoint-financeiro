@@ -7,14 +7,15 @@ export interface BankConfig {
   color: string
   supportsOFX: boolean
   supportsCSV: boolean
+  supportsXLSX: boolean
 }
 
 export const BANKS: BankConfig[] = [
-  { id: 'nubank',    name: 'Nubank',    color: '#820AD1', supportsOFX: true,  supportsCSV: true  },
-  { id: 'itau',      name: 'Itaú',      color: '#EC7000', supportsOFX: true,  supportsCSV: true  },
-  { id: 'bradesco',  name: 'Bradesco',  color: '#CC0000', supportsOFX: true,  supportsCSV: true  },
-  { id: 'santander', name: 'Santander', color: '#EC0000', supportsOFX: true,  supportsCSV: false },
-  { id: 'inter',     name: 'Inter',     color: '#FF7A00', supportsOFX: true,  supportsCSV: true  },
+  { id: 'nubank',    name: 'Nubank',    color: '#820AD1', supportsOFX: true,  supportsCSV: true,  supportsXLSX: false },
+  { id: 'itau',      name: 'Itaú',      color: '#EC7000', supportsOFX: true,  supportsCSV: false, supportsXLSX: true  },
+  { id: 'bradesco',  name: 'Bradesco',  color: '#CC0000', supportsOFX: true,  supportsCSV: true,  supportsXLSX: false },
+  { id: 'santander', name: 'Santander', color: '#EC0000', supportsOFX: true,  supportsCSV: false, supportsXLSX: false },
+  { id: 'inter',     name: 'Inter',     color: '#FF7A00', supportsOFX: true,  supportsCSV: true,  supportsXLSX: false },
 ]
 
 export type ImportFormat = 'ofx' | 'csv'

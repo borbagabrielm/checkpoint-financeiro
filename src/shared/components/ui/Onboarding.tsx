@@ -65,7 +65,7 @@ export function Onboarding({ onComplete, userId }: Props) {
   const { add } = useTransactions()
   const { user } = useAuth()
   const { upload, uploading } = useAvatarUpload(userId ?? '')
-  const { status: pushStatus, loading: pushLoading, subscribe, isSupported: pushSupported } = usePushSubscription()
+  const { status: pushStatus, loading: pushLoading, error: pushError, subscribe, isSupported: pushSupported } = usePushSubscription()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const qc = useQueryClient()
 
@@ -367,8 +367,15 @@ export function Onboarding({ onComplete, userId }: Props) {
                   <Button
                     className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold"
                     onClick={async () => {
-                      await subscribe()
-                      setStep(4)
+                      const success = await subscribe()
+                      if (success) {
+                        // Pequeno delay só pra o usuário ver a confirmação visual
+                        // (ícone/texto mudando para "ativado") antes de avançar
+                        setTimeout(() => setStep(4), 600)
+                      }
+                      // Se success for false (usuário negou, ou deu erro),
+                      // permanece no step — o status já reflete 'denied' ou
+                      // o erro fica logado no console, sem travar a tela
                     }}
                     disabled={pushLoading}
                   >
@@ -379,6 +386,9 @@ export function Onboarding({ onComplete, userId }: Props) {
                     className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1">
                     Pular esta etapa
                   </button>
+                  {pushError && (
+                    <p className="text-xs text-[hsl(var(--expense))] mt-1">{pushError}</p>
+                  )}
                 </div>
               )}
             </div>

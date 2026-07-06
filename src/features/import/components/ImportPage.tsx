@@ -145,11 +145,12 @@ export default function ImportPage() {
                 <div className="flex gap-2">
                   {BANKS.find(b => b.id === selectedBank)?.supportsOFX && <Badge variant="secondary">.ofx / .qfx</Badge>}
                   {BANKS.find(b => b.id === selectedBank)?.supportsCSV && <Badge variant="secondary">.csv</Badge>}
+                  {BANKS.find(b => b.id === selectedBank)?.supportsXLSX && <Badge variant="secondary">.xlsx</Badge>}
                 </div>
               </div>
             )}
 
-            <input ref={fileInputRef} type="file" accept=".ofx,.qfx,.csv" className="hidden"
+            <input ref={fileInputRef} type="file" accept=".ofx,.qfx,.csv,.xlsx" className="hidden"
               onChange={async (e) => {
                 const file = e.target.files?.[0]
                 if (!file || !selectedBank) return
