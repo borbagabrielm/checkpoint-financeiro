@@ -58,11 +58,11 @@ export function parseXLSX(buffer: ArrayBuffer, bankId: BankId): ParseResult {
   const ws = wb.Sheets[wb.SheetNames[0]]
   if (!ws) return { transactions: [], warnings: ['Planilha vazia ou inválida.'] }
 
-  // Converter para array de arrays
+  // raw: true mantém valores originais (datas como número serial ou string)
+  // sem conversão automática que pode variar por locale da planilha
   const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
     header: 1,
-    raw: false,
-    dateNF: 'yyyy-mm-dd',
+    raw: true,
     defval: null,
   }) as unknown[][]
 
@@ -81,12 +81,29 @@ export function parseXLSX(buffer: ArrayBuffer, bankId: BankId): ParseResult {
 
       if (!dateRaw || !descRaw || amtRaw === null || amtRaw === undefined) continue
 
-      // Processar data — SheetJS com cellDates:true retorna string "yyyy-mm-dd"
-      // quando dateNF está setado
-      let dateStr = String(dateRaw).substring(0, 10)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        warnings.push(`Data inválida ignorada: "${dateRaw}"`)
-        continue
+      // Processar data — SheetJS pode retornar vários formatos dependendo
+      // do locale da planilha e da versão:
+      // - "2026-06-24"  (yyyy-mm-dd, quando dateNF funciona)
+      // - "24/06/2026"  (dd/mm/yyyy, formato brasileiro do Itaú)
+      // - número serial do Excel (ex: 46196)
+      let dateStr = ''
+      if (typeof dateRaw === 'number') {
+        // Serial do Excel: converter para data
+        const jsDate = XLSX.SSF.parse_date_code(dateRaw)
+        dateStr = `${jsDate.y}-${String(jsDate.m).padStart(2, '0')}-${String(jsDate.d).padStart(2, '0')}`
+      } else {
+        const s = String(dateRaw).trim()
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+          // Já está em YYYY-MM-DD
+          dateStr = s.substring(0, 10)
+        } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+          // DD/MM/YYYY → YYYY-MM-DD
+          const [d, m, y] = s.split('/')
+          dateStr = `${y}-${m}-${d}`
+        } else {
+          warnings.push(`Data inválida ignorada: "${dateRaw}"`)
+          continue
+        }
       }
 
       // Processar valor
