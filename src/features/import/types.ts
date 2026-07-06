@@ -18,7 +18,7 @@ export const BANKS: BankConfig[] = [
   { id: 'inter',     name: 'Inter',     color: '#FF7A00', supportsOFX: true,  supportsCSV: true,  supportsXLSX: false },
 ]
 
-export type ImportFormat = 'ofx' | 'csv'
+export type ImportFormat = 'ofx' | 'csv' | 'xlsx'
 
 // ─── Transação importada (antes da revisão) ───────────────────
 export interface ImportedTransaction {
