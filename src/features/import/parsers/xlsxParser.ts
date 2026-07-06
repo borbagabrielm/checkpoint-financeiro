@@ -81,23 +81,27 @@ export function parseXLSX(buffer: ArrayBuffer, bankId: BankId): ParseResult {
 
       if (!dateRaw || !descRaw || amtRaw === null || amtRaw === undefined) continue
 
-      // Processar data — SheetJS pode retornar vários formatos dependendo
-      // do locale da planilha e da versão:
-      // - "2026-06-24"  (yyyy-mm-dd, quando dateNF funciona)
-      // - "24/06/2026"  (dd/mm/yyyy, formato brasileiro do Itaú)
+      // Processar data — SheetJS pode retornar vários formatos:
+      // - objeto Date do JS (raw: true converte células de data automaticamente)
+      // - "2026-06-24"  (yyyy-mm-dd)
+      // - "24/06/2026"  (dd/mm/yyyy, formato brasileiro)
       // - número serial do Excel (ex: 46196)
       let dateStr = ''
-      if (typeof dateRaw === 'number') {
-        // Serial do Excel: converter para data
+      if (dateRaw instanceof Date) {
+        // Objeto Date — extrair ano/mês/dia evitando problema de timezone
+        const y = dateRaw.getFullYear()
+        const m = String(dateRaw.getMonth() + 1).padStart(2, '0')
+        const d = String(dateRaw.getDate()).padStart(2, '0')
+        dateStr = `${y}-${m}-${d}`
+      } else if (typeof dateRaw === 'number') {
+        // Serial do Excel
         const jsDate = XLSX.SSF.parse_date_code(dateRaw)
         dateStr = `${jsDate.y}-${String(jsDate.m).padStart(2, '0')}-${String(jsDate.d).padStart(2, '0')}`
       } else {
         const s = String(dateRaw).trim()
         if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-          // Já está em YYYY-MM-DD
           dateStr = s.substring(0, 10)
         } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
-          // DD/MM/YYYY → YYYY-MM-DD
           const [d, m, y] = s.split('/')
           dateStr = `${y}-${m}-${d}`
         } else {
