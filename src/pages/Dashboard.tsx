@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Plus, TrendingUp, TrendingDown, Wallet, Clock, RefreshCw, CheckSquare, AlertTriangle } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/feedback'
 import { Skeleton } from '@/shared/components/ui/display'
-import { formatCurrency, getMonthLabel, getCurrentMonthKey, cn } from '@/shared/lib/utils'
+import { formatCurrency, getMonthLabel, getCurrentMonthKey, getMonthOptions, cn } from '@/shared/lib/utils'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { TransactionForm } from '@/features/transactions/components/TransactionForm'
 import { TransactionList } from '@/features/transactions/components/TransactionList'
@@ -15,19 +15,6 @@ import { useRecurring } from '@/features/recurring/hooks/useRecurring'
 import { useApprovals } from '@/features/shared-expenses/hooks/useApprovals'
 import { useNavigate } from 'react-router-dom'
 import type { Transaction } from '@/shared/types'
-
-function getMonthOptions() {
-  const seen = new Set<string>()
-  const options: { value: string; label: string }[] = []
-  for (let i = 0; i < 6; i++) {
-    const d = new Date()
-    d.setDate(1)
-    d.setMonth(d.getMonth() - i)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    if (!seen.has(key)) { seen.add(key); options.push({ value: key, label: getMonthLabel(key) }) }
-  }
-  return options
-}
 
 // ─── Stat card com barra de acento no topo ────────────────────
 function StatCard({ label, value, icon: Icon, accentColor, valueColor, iconBg, loading, isCount = false }: {
@@ -71,6 +58,12 @@ export default function DashboardPage() {
   const { recurring } = useRecurring()
   const { pending: pendingApprovals } = useApprovals()
   const monthOptions = getMonthOptions()
+  const monthScrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = monthScrollRef.current?.querySelector<HTMLElement>(`[data-month="${monthFilter}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [monthFilter])
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (tx: Transaction) => { setEditing(tx); setFormOpen(true) }
@@ -123,15 +116,16 @@ export default function DashboardPage() {
       </div>
 
       {/* Filtros de mês */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div ref={monthScrollRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         <button
+          data-month="all"
           onClick={() => setMonthFilter('all')}
           className={cn('shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
             monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
           Todos
         </button>
         {monthOptions.map((opt) => (
-          <button key={opt.value} onClick={() => setMonthFilter(opt.value)}
+          <button key={opt.value} data-month={opt.value} onClick={() => setMonthFilter(opt.value)}
             className={cn('shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize',
               monthFilter === opt.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
             {opt.label}

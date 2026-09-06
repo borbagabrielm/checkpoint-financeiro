@@ -11,6 +11,7 @@ import { useFriends } from '@/features/social/hooks/useFriends'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { searchProfiles, getOtherProfile } from '@/features/social/services/socialService'
 import type { UserProfile } from '@/shared/types'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 
 export default function SocialPage() {
   const { user } = useAuth()
@@ -194,12 +195,7 @@ export default function SocialPage() {
               ))}
             </div>
           ) : accepted.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-center">
-              <p className="text-2xl mb-2">👥</p>
-              <p className="text-sm text-muted-foreground">
-                Nenhum amigo ainda. Busque pelo nome para adicionar.
-              </p>
-            </div>
+            <EmptyState title="Nenhum amigo ainda" description="Busque pelo nome para adicionar." className="py-8" />
           ) : (
             <ul className="space-y-2">
               {accepted.map((f) => {

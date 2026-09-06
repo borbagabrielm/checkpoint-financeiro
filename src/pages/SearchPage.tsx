@@ -4,6 +4,7 @@ import { Input } from '@/shared/components/ui/form-elements'
 import { Card, CardContent } from '@/shared/components/ui/display'
 import { cn, formatCurrency, formatDate, extractCategoryEmoji } from '@/shared/lib/utils'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 
 export default function SearchPage() {
   const { transactions, isLoading } = useTransactions()
@@ -71,14 +72,7 @@ export default function SearchPage() {
               {isLoading ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
               ) : results.length === 0 ? (
-                <div className="py-10 text-center flex flex-col items-center gap-3">
-                  <svg viewBox="492 221 90 88" width="40" height="40" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
-                    <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
-                    <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
-                    <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
-                  </svg>
-                  <p className="text-sm text-muted-foreground">Nenhuma transação encontrada para "{query}"</p>
-                </div>
+                <EmptyState title={`Nenhuma transação encontrada para "${query}"`} className="py-10" />
               ) : (
                 <ul className="space-y-1">
                   {results.map((tx) => (
@@ -123,17 +117,11 @@ export default function SearchPage() {
       )}
 
       {query.length === 0 && (
-        <div className="flex flex-col items-center py-16 text-center gap-3">
-          <svg viewBox="492 221 90 88" width="56" height="56" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
-            <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
-            <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
-            <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
-          </svg>
-          <div>
-            <p className="text-sm text-muted-foreground">Busque por descrição, categoria ou método de pagamento</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Abrange todas as suas transações de todos os períodos</p>
-          </div>
-        </div>
+        <EmptyState
+          title="Busque por descrição, categoria ou método de pagamento"
+          description="Abrange todas as suas transações de todos os períodos"
+          className="py-16"
+        />
       )}
     </div>
   )

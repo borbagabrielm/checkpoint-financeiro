@@ -13,6 +13,7 @@ import { cn, formatCurrency, clampPercentage } from '@/shared/lib/utils'
 import { useGoals } from '@/features/goals/hooks/useGoals'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import type { FinancialGoal } from '@/shared/types'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 
 const schema = z.object({
   title: z.string().min(1, 'Nome obrigatório'),
@@ -160,21 +161,16 @@ export default function GoalsPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
         </div>
       ) : goals.length === 0 ? (
-        <div className="flex flex-col items-center py-16 text-center gap-3">
-          <svg viewBox="492 221 90 88" width="48" height="48" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
-            <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
-            <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
-            <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
-          </svg>
-          <p className="text-lg font-semibold">Nenhuma meta ainda</p>
-          <p className="text-sm text-muted-foreground">
-            Crie sua primeira meta e acompanhe seu progresso mês a mês.
-          </p>
-          <Button className="mt-2" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" />
-            Criar primeira meta
-          </Button>
-        </div>
+        <EmptyState
+          title="Nenhuma meta ainda"
+          description="Crie sua primeira meta e acompanhe seu progresso mês a mês."
+          action={
+            <Button className="mt-2 bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4" />
+              Criar primeira meta
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {sorted.map((goal) => {

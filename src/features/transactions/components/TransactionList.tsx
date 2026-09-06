@@ -16,6 +16,7 @@ import { cn, formatCurrency, formatDate, extractCategoryEmoji, getInitials, roun
 import { useTransactions } from '../hooks/useTransactions'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import type { Transaction } from '@/shared/types'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 
 const PAGE_SIZE = 20
 
@@ -269,19 +270,10 @@ export function TransactionList({ onEdit, monthFilter = 'all' }: Props) {
 
       {/* Lista virtualizada */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
-          <svg viewBox="492 221 90 88" width="44" height="44" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
-            <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="hsl(var(--logo-accent))"/>
-            <circle cx="515.62" cy="244.36" r="14.47" fill="hsl(var(--logo-accent))"/>
-            <circle cx="568.01" cy="293.67" r="14.47" fill="hsl(var(--logo-accent))"/>
-          </svg>
-          <div>
-            <p className="text-sm font-semibold">{search ? 'Nenhuma transação encontrada' : 'Nenhuma transação ainda'}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {search ? `Sem resultados para "${search}"` : 'Adicione sua primeira transação acima'}
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          title={search ? 'Nenhuma transação encontrada' : 'Nenhuma transação ainda'}
+          description={search ? `Sem resultados para "${search}"` : 'Adicione sua primeira transação acima'}
+        />
       ) : (
         <VirtualList
           items={filtered}

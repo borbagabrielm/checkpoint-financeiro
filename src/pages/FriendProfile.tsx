@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Users, Receipt, CircleCheck, Clock, Tag, MessageCircle } from 'lucide-react'
+import { ArrowLeft, TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Receipt, CircleCheck, Clock, Tag, MessageCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
 import { Badge, Skeleton } from '@/shared/components/ui/display'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 import { cn, formatCurrency, formatDate, getInitials, getMonthLabel, getCurrentMonthKey } from '@/shared/lib/utils'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { supabase } from '@/shared/lib/supabase'
@@ -299,10 +300,7 @@ export default function FriendProfilePage() {
           {isLoading ? (
             <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="flex gap-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 flex-1" /><Skeleton className="h-4 w-20" /></div>)}</div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center">
-              <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">Nenhuma transação compartilhada neste período.</p>
-            </div>
+            <EmptyState title="Nenhuma transação compartilhada neste período." className="py-10" />
           ) : (
             <ul className="divide-y divide-border">
               {filtered.map((tx) => (

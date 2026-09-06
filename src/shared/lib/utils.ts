@@ -1,4 +1,4 @@
-import { format, parseISO, isValid } from 'date-fns'
+import { format, parseISO, isValid, addMonths, subMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -58,6 +58,20 @@ export function getMonthLabel(monthKey: string): string {
   } catch {
     return monthKey
   }
+}
+
+// Meses para os filtros de período — do passado até o futuro, ordem cronológica.
+// monthsForward inclui meses futuros para que parcelas e lançamentos
+// já agendados (ex: recorrências, compras parceladas) fiquem visíveis.
+export function getMonthOptions(monthsBack = 5, monthsForward = 3): { value: string; label: string }[] {
+  const now = new Date()
+  const options: { value: string; label: string }[] = []
+  for (let i = -monthsBack; i <= monthsForward; i++) {
+    const d = i < 0 ? subMonths(now, -i) : addMonths(now, i)
+    const key = format(d, 'yyyy-MM')
+    options.push({ value: key, label: getMonthLabel(key) })
+  }
+  return options
 }
 
 // ─── Numbers ──────────────────────────────────────────────────

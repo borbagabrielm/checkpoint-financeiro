@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, type ReactNode } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -16,20 +16,18 @@ import { useAvatarUpload } from '@/shared/hooks/useAvatarUpload'
 import { usePushSubscription } from '@/shared/hooks/usePushSubscription'
 import { supabase } from '@/shared/lib/supabase'
 import { queryKeys } from '@/shared/lib/queryKeys'
+import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
 
-// Ícone % do Raxo — usado nos steps de boas-vindas e conclusão
-function RaxoPercentIcon({ size = 32 }: { size?: number }) {
-  return (
-    <svg viewBox="492 221 90 88" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
-      <polygon points="582.48,230.12 530.02,308.99 501.15,308.99 553.61,230.12 582.48,230.12" fill="#AAFF47"/>
-      <circle cx="515.62" cy="244.36" r="14.47" fill="#AAFF47"/>
-      <circle cx="568.01" cy="293.67" r="14.47" fill="#AAFF47"/>
-    </svg>
-  )
+// Ícone circular "moeda" trailing dos botões primários Aurora — ver §6.3
+function TrailingIcon({ children }: { children: ReactNode }) {
+  return <span className="aurora-btn-trailing-icon bg-[#0A0A0A] text-[#AAFF47]">{children}</span>
 }
 
 // ─── Steps ───────────────────────────────────────────────────
 const steps = ['Boas-vindas', 'Seu perfil', 'Primeira transação', 'Notificações', 'Pronto!'] as const
+
+// Botão primário pílula Aurora — ícone circular "moeda" colado à direita (§6.3)
+const ctaButtonClass = 'w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold justify-between pl-5 pr-2'
 
 // ─── Schemas ─────────────────────────────────────────────────
 const profileSchema = z.object({
@@ -162,7 +160,7 @@ export function Onboarding({ onComplete, userId }: Props) {
   const displayName = profileForm.watch('display_name') || user?.user_metadata?.full_name || user?.email
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 overflow-y-auto">
+    <div className="aurora-light-scope fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="w-full max-w-md animate-scale-in my-auto">
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-2 mb-8">
@@ -174,24 +172,24 @@ export function Onboarding({ onComplete, userId }: Props) {
           ))}
         </div>
 
-        <div className="bg-card border rounded-2xl p-8 shadow-lg">
+        <div className="aurora-card-light p-8">
 
           {/* ── Step 0: Boas-vindas ─────────────────────── */}
           {step === 0 && (
             <div className="text-center space-y-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mx-auto shadow-lg">
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0A0A0A] mx-auto shadow-lg">
                 <RaxoPercentIcon size={30} />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold">Bem-vindo ao Raxo!</h1>
+                <h1 className="text-2xl font-aurora font-extrabold">Bem-vindo ao Raxo!</h1>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   Vamos configurar sua conta em poucos passos. Primeiro, personalize seu perfil.
                 </p>
               </div>
               <div className="space-y-2">
-                <Button className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={() => setStep(1)}>
+                <Button className={ctaButtonClass} onClick={() => setStep(1)}>
                   Começar
-                  <ArrowRight className="h-4 w-4" />
+                  <TrailingIcon><ArrowRight className="h-4 w-4" /></TrailingIcon>
                 </Button>
                 <button onClick={skipAll}
                   className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
@@ -205,7 +203,7 @@ export function Onboarding({ onComplete, userId }: Props) {
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-display font-semibold">Seu perfil</h2>
+                <h2 className="text-xl font-aurora font-bold">Seu perfil</h2>
                 <p className="text-sm text-muted-foreground mt-1">Como os seus amigos vão te encontrar.</p>
               </div>
 
@@ -255,9 +253,9 @@ export function Onboarding({ onComplete, userId }: Props) {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" disabled={saveProfile.isPending}>
+                <Button type="submit" className={ctaButtonClass} disabled={saveProfile.isPending}>
                   {saveProfile.isPending ? 'Salvando...' : 'Salvar e continuar'}
-                  <ArrowRight className="h-4 w-4" />
+                  <TrailingIcon><ArrowRight className="h-4 w-4" /></TrailingIcon>
                 </Button>
               </form>
 
@@ -272,7 +270,7 @@ export function Onboarding({ onComplete, userId }: Props) {
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-display font-semibold">Adicione sua primeira transação</h2>
+                <h2 className="text-xl font-aurora font-bold">Adicione sua primeira transação</h2>
                 <p className="text-sm text-muted-foreground mt-1">Pode ser uma despesa recente ou uma receita.</p>
               </div>
 
@@ -319,9 +317,9 @@ export function Onboarding({ onComplete, userId }: Props) {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" disabled={add.isPending}>
+                <Button type="submit" className={ctaButtonClass} disabled={add.isPending}>
                   {add.isPending ? 'Adicionando...' : 'Adicionar e continuar'}
-                  <ArrowRight className="h-4 w-4" />
+                  <TrailingIcon><ArrowRight className="h-4 w-4" /></TrailingIcon>
                 </Button>
               </form>
 
@@ -337,15 +335,15 @@ export function Onboarding({ onComplete, userId }: Props) {
             <div className="text-center space-y-6">
               <div className={cn(
                 'flex items-center justify-center w-16 h-16 rounded-2xl mx-auto shadow-lg',
-                pushStatus === 'subscribed' ? 'bg-[hsl(var(--income-fill)/0.2)]' : 'bg-primary'
+                pushStatus === 'subscribed' ? 'bg-[hsl(var(--income-fill)/0.2)]' : 'bg-[#0A0A0A]'
               )}>
                 {pushStatus === 'subscribed'
                   ? <BellRing className="h-7 w-7 text-[hsl(var(--income))]" />
-                  : <Bell className="h-7 w-7 text-white" />
+                  : <Bell className="h-7 w-7 text-[#AAFF47]" />
                 }
               </div>
               <div>
-                <h2 className="text-xl font-semibold">Ative as notificações</h2>
+                <h2 className="text-xl font-aurora font-bold">Ative as notificações</h2>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   {pushStatus === 'subscribed'
                     ? 'Notificações ativadas! Você será avisado quando um amigo dividir uma despesa com você, mesmo com o app fechado.'
@@ -358,9 +356,9 @@ export function Onboarding({ onComplete, userId }: Props) {
                   Notificações não são suportadas neste navegador/dispositivo.
                 </p>
               ) : pushStatus === 'subscribed' ? (
-                <Button className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={skipStep}>
+                <Button className={ctaButtonClass} onClick={skipStep}>
                   Continuar
-                  <ArrowRight className="h-4 w-4" />
+                  <TrailingIcon><ArrowRight className="h-4 w-4" /></TrailingIcon>
                 </Button>
               ) : (
                 <div className="space-y-2">
@@ -397,20 +395,21 @@ export function Onboarding({ onComplete, userId }: Props) {
           {/* ── Step 4: Pronto ──────────────────────────── */}
           {step === 4 && (
             <div className="text-center space-y-6">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(var(--income-fill)/0.18)] mx-auto">
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0A0A0A] mx-auto shadow-lg">
                 <RaxoPercentIcon size={30} />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold">Tudo pronto!</h2>
+                <h2 className="text-2xl font-aurora font-extrabold">Tudo pronto!</h2>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   Sua conta está configurada. Agora explore o dashboard, convide amigos e divida despesas.
                 </p>
               </div>
-              <Button className="w-full bg-[#AAFF47] text-[#0A0A0A] hover:bg-[#AAFF47]/85 font-bold" onClick={() => {
+              <Button className={ctaButtonClass} onClick={() => {
                 localStorage.setItem(`onboarding_done_${userId}`, '1')
                 onComplete()
               }}>
                 Ir para o Dashboard
+                <TrailingIcon><ArrowRight className="h-4 w-4" /></TrailingIcon>
               </Button>
             </div>
           )}

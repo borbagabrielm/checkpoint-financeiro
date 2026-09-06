@@ -37,6 +37,44 @@
     --chart-5: 262 80% 60%;
     /* % do logo em light mode usa azul */
     --logo-accent: 236 100% 61%;      /* #3B3BFF */
+
+    /* ── Raxo Aurora — texturas e gradiente de marca (ver raxo-design-system-v2.md) ── */
+    --hatch: repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 1px, transparent 6px);
+    --dot-grid: radial-gradient(currentColor 1px, transparent 1px);
+    --dot-grid-size: 16px 16px;
+    --gradient-wave: linear-gradient(90deg, #AAFF47 0%, #6FE0A8 35%, #4FB8D9 65%, #3B3BFF 100%);
+    --font-aurora: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  }
+
+  /* Força os tokens de tema claro num subtree, independente do Core estar em
+     dark — usado por superfícies Aurora nativamente claras (onboarding) para
+     que os componentes de formulário/tema já existentes funcionem sem
+     precisar recolorir cada texto manualmente. Ver raxo-design-system-v2.md §1. */
+  .aurora-light-scope {
+    --background: 60 20% 97%;
+    --foreground: 0 0% 6%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 6%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 6%;
+    --primary: 236 100% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 60 10% 93%;
+    --secondary-foreground: 0 0% 20%;
+    --muted: 60 8% 95%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 236 100% 61%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 64%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 236 100% 61%;
+    --income: 100 100% 20%;
+    --income-fill: 88 100% 64%;
+    --income-foreground: 0 0% 100%;
+    --expense: 0 100% 64%;
+    --logo-accent: 236 100% 61%;
   }
 
   .dark {
@@ -129,6 +167,49 @@
   .badge-approved {
     background: hsl(var(--income-fill));
     @apply text-[#0A0A0A] font-bold;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     Raxo Aurora — camada visual para onboarding, empty states e
+     superfícies de marca. Ver raxo-design-system-v2.md.
+     ═══════════════════════════════════════════════════════════ */
+
+  /* Texturas de superfície (substituem "vidro") */
+  .hatch-texture {
+    background-image: var(--hatch);
+  }
+  .dot-grid-texture {
+    background-image: var(--dot-grid);
+    background-size: var(--dot-grid-size);
+  }
+
+  /* Trilho de progresso com hachura — preenchimento fica a cargo do elemento filho */
+  .aurora-progress-track {
+    @apply relative h-2 w-full overflow-hidden rounded-full text-border;
+    background-image: var(--hatch);
+  }
+  .aurora-progress-fill {
+    @apply absolute inset-y-0 left-0 rounded-full bg-[#AAFF47] transition-all duration-300;
+  }
+
+  /* Handle diamante — marcador de progresso/nível (§5.4) */
+  .aurora-diamond {
+    @apply inline-block h-2.5 w-2.5 rotate-45 rounded-[2px];
+  }
+
+  /* Card claro Aurora — stat card / empty state (§6.1) */
+  .aurora-card-light {
+    @apply bg-white rounded-[20px] shadow-[0_4px_24px_rgba(10,10,10,0.06)] border border-black/5;
+  }
+
+  /* Card de destaque escuro Aurora — CTA / banner (§6.2) */
+  .aurora-card-dark {
+    @apply relative overflow-hidden rounded-[20px] bg-[#0A0A0A] text-white;
+  }
+
+  /* Botão pílula com ícone circular trailing (§6.3) */
+  .aurora-btn-trailing-icon {
+    @apply flex items-center justify-center h-6 w-6 rounded-full shrink-0;
   }
 
   /* Scrollbar */

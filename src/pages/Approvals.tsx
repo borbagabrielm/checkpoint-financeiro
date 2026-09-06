@@ -11,6 +11,7 @@ import { useAuth } from '@/shared/hooks/useAuth'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
+import { EmptyState } from '@/shared/components/ui/EmptyState'
 
 export default function ApprovalsPage() {
   const { user } = useAuth()
@@ -154,10 +155,7 @@ export default function ApprovalsPage() {
               ))}
             </div>
           ) : pending.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-center">
-              <CheckCircle2 className="h-10 w-10 text-muted-foreground/40 mb-3" />
-              <p className="text-sm text-muted-foreground">Tudo em dia! Sem aprovações pendentes.</p>
-            </div>
+            <EmptyState title="Tudo em dia!" description="Sem aprovações pendentes." className="py-8" />
           ) : (
             <ul className="space-y-3">
               {pending.map((item) => {

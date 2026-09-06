@@ -1,5 +1,5 @@
 import { supabase } from '@/shared/lib/supabase'
-import { format, subMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns'
+import { format, subMonths, addMonths, parseISO, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { MonthlyStats, CategoryBreakdown, Transaction } from '@/shared/types'
 
@@ -17,10 +17,15 @@ export async function fetchTransactionsForAnalytics(userId: string): Promise<Tra
   })) as Transaction[]
 }
 
-export function computeMonthlyStats(transactions: Transaction[], months = 6): MonthlyStats[] {
+export function computeMonthlyStats(
+  transactions: Transaction[],
+  monthsBack = 5,
+  monthsForward = 3
+): MonthlyStats[] {
   const now = new Date()
-  return Array.from({ length: months }, (_, i) => {
-    const date = subMonths(now, months - 1 - i)
+  const total = monthsBack + monthsForward + 1
+  return Array.from({ length: total }, (_, i) => {
+    const date = addMonths(subMonths(now, monthsBack), i)
     const monthKey = format(date, 'yyyy-MM')
     const label = format(date, 'MMM', { locale: ptBR })
     const start = startOfMonth(date)

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/disp
 import { cn, formatCurrency, formatDate, getInitials } from '@/shared/lib/utils'
 import { useNotifications } from '@/shared/hooks/useNotifications'
 import type { NotificationItem } from '@/shared/hooks/useNotifications'
+import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
@@ -102,8 +103,8 @@ function NotificationDrawer({ open, onClose }: { open: boolean; onClose: () => v
             </div>
           ) : all.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
-                <Bell className="h-5 w-5 text-muted-foreground" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[#AAFF47]/15 mb-3">
+                <RaxoPercentIcon size={20} fill="#3B3BFF" />
               </div>
               <p className="text-sm font-medium">Tudo em dia!</p>
               <p className="text-xs text-muted-foreground mt-1">

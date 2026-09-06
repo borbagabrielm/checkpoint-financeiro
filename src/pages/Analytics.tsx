@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Skeleton } from '@/shared/components/ui/display'
-import { formatCurrency, getCurrentMonthKey, getMonthLabel } from '@/shared/lib/utils'
+import { formatCurrency, getCurrentMonthKey, getMonthOptions } from '@/shared/lib/utils'
 import { useAnalytics } from '@/features/analytics/hooks/useAnalytics'
 import {
   MonthlyAreaChart, CategoryPieChart, CategoryProgressBars, BalanceEvolutionChart,
@@ -14,17 +14,16 @@ import { cn } from '@/shared/lib/utils'
 import type { Transaction } from '@/shared/types'
 import type { MonthlyStats } from '@/shared/types'
 
-const MONTHS = Array.from({ length: 6 }, (_, i) => {
-  const d = new Date()
-  d.setDate(1)
-  d.setMonth(d.getMonth() - i)
-  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  return { value: key, label: getMonthLabel(key) }
-})
-
 export default function AnalyticsPage() {
   const [monthFilter, setMonthFilter] = useState(getCurrentMonthKey())
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+  const monthOptions = getMonthOptions()
+  const monthScrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = monthScrollRef.current?.querySelector<HTMLElement>(`[data-month="${monthFilter}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }, [monthFilter])
 
   const { transactions, allTransactions, expenseCategories, isLoading } =
     useAnalytics(monthFilter)
@@ -64,15 +63,16 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Filtro de mês */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div ref={monthScrollRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         <button
+          data-month="all"
           onClick={() => { setMonthFilter('all'); setCategoryFilter(null) }}
           className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           Tudo
         </button>
-        {MONTHS.map((m) => (
-          <button key={m.value} onClick={() => { setMonthFilter(m.value); setCategoryFilter(null) }}
+        {monthOptions.map((m) => (
+          <button key={m.value} data-month={m.value} onClick={() => { setMonthFilter(m.value); setCategoryFilter(null) }}
             className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${monthFilter === m.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
           >
             {m.label}

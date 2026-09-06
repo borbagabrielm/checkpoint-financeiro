@@ -10,6 +10,9 @@ export default {
         sans: ['Inter', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
         display: ['Inter', 'sans-serif'],
+        // Aurora — exclusiva de headlines em contextos de marca (onboarding, empty states, marketing)
+        // nunca usada no produto Core, ver raxo-design-system-v2.md §4.1
+        aurora: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -63,6 +66,10 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      backgroundImage: {
+        'gradient-wave': 'linear-gradient(90deg, #AAFF47 0%, #6FE0A8 35%, #4FB8D9 65%, #3B3BFF 100%)',
+        hatch: 'repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 1px, transparent 6px)',
+      },
       keyframes: {
         'fade-in': {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
@@ -79,12 +86,17 @@ export default {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
+        'wave-drift': {
+          '0%, 100%': { transform: 'scaleY(1) translateY(0)' },
+          '50%': { transform: 'scaleY(1.08) translateY(-2px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
         'slide-in': 'slide-in 0.3s ease-out',
         'scale-in': 'scale-in 0.2s ease-out',
         shimmer: 'shimmer 1.5s infinite',
+        'wave-drift': 'wave-drift 10s ease-in-out infinite',
       },
     },
   },
