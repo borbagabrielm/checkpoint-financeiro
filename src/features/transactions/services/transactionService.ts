@@ -177,5 +177,6 @@ function normalizeTransaction(raw: Record<string, unknown>): Transaction {
     date: raw.date as string,
     created_at: raw.created_at as string,
     updated_at: raw.updated_at as string,
+    recurring_id: (raw.recurring_id as string) ?? null,
   }
 }

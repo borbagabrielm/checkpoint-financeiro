@@ -36,6 +36,7 @@ export interface Transaction {
   date: string
   created_at: string
   updated_at: string
+  recurring_id: string | null
   // computed from shared_transactions join
   shared_with?: SharedTransactionSummary[]
 }
@@ -180,5 +181,21 @@ export interface RecurringTransaction {
   day_of_month: number
   active: boolean
   last_created_at: string | null
+  generated_until: string | null
   created_at: string
+}
+
+export interface RecurringTransactionShare {
+  id: string
+  recurring_id: string
+  shared_with_user_id: string
+  split_amount: number
+  split_percentage: number | null
+  created_at: string
+}
+
+// Recorrência de outro usuário, compartilhada com o usuário atual
+export interface SharedRecurringTransaction extends RecurringTransaction {
+  owner_profile: UserProfile | null
+  split_amount: number
 }

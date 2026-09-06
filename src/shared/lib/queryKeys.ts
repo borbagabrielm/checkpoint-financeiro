@@ -48,6 +48,12 @@ export const queryKeys = {
     approvalsHistory: (userId: string) => ['approvals', userId, 'history'] as const,
   },
 
+  // Recurring transactions
+  recurring: {
+    mine: (userId: string) => ['recurring', userId, 'mine'] as const,
+    shared: (userId: string) => ['recurring', userId, 'shared'] as const,
+  },
+
   // Notifications
   notifications: {
     all: (userId: string) => ['notifications', userId] as const,

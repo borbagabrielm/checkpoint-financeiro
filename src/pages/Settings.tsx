@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
+import { Card, CardContent, CardHeader, CardTitle, Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
 import { Separator } from '@/shared/components/ui/display'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -15,8 +15,12 @@ import { useTheme } from '@/shared/hooks/useTheme'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import { PushNotificationToggle } from '@/shared/components/ui/PushNotificationToggle'
 import { useBudgets } from '@/features/budgets/hooks/useBudgets'
-import { useRecurring } from '@/features/recurring/hooks/useRecurring'
-import { cn, formatCurrency, DEFAULT_INCOME_CATEGORIES } from '@/shared/lib/utils'
+import { useRecurring, useSharedRecurring } from '@/features/recurring/hooks/useRecurring'
+import { useFriends } from '@/features/social/hooks/useFriends'
+import { getOtherProfile } from '@/features/social/services/socialService'
+import { SplitSection } from '@/features/transactions/components/SplitSection'
+import type { SplitEntry } from '@/features/transactions/components/TransactionForm'
+import { cn, formatCurrency, getInitials, roundToCents, DEFAULT_INCOME_CATEGORIES } from '@/shared/lib/utils'
 import type { RecurringTransaction } from '@/shared/types'
 
 const THEMES = [
@@ -32,7 +36,9 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { preferences, save } = useUserPreferences()
   const { budgets, upsert: upsertBudget, remove: removeBudget } = useBudgets()
-  const { recurring, create: createRecurring, toggle: toggleRecurring, remove: removeRecurring } = useRecurring()
+  const { recurring, create: createRecurring, activate: activateRecurring, deactivate: deactivateRecurring, remove: removeRecurring } = useRecurring()
+  const { sharedRecurring } = useSharedRecurring()
+  const { accepted: acceptedFriends } = useFriends()
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState<Tab>('aparencia')
@@ -47,10 +53,37 @@ export default function SettingsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string; label: string; type: 'budget' | 'recurring'
   } | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<{ id: string; label: string } | null>(null)
+  const [splitType, setSplitType] = useState<'equal' | 'custom'>('equal')
+  const [selectedFriends, setSelectedFriends] = useState<SplitEntry[]>([])
 
-  const recurringForm = useForm<Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'last_created_at'>>({
+  const recurringForm = useForm<Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'last_created_at' | 'generated_until'>>({
     defaultValues: { description: '', amount: 0, type: 'expense', category: '', payment_method: null, day_of_month: 1, active: true },
   })
+  const recurringAmount = recurringForm.watch('amount') || 0
+
+  const toggleFriend = (userId: string, displayName: string) => {
+    setSelectedFriends((prev) => {
+      const exists = prev.find((f) => f.userId === userId)
+      if (exists) return prev.filter((f) => f.userId !== userId)
+      return [...prev, { userId, displayName, customAmount: '' }]
+    })
+  }
+
+  const updateCustomAmount = (userId: string, value: string) => {
+    setSelectedFriends((prev) => prev.map((f) => f.userId === userId ? { ...f, customAmount: value } : f))
+  }
+
+  const buildRecurringShares = (amount: number) => {
+    if (!selectedFriends.length) return undefined
+    const totalPeople = selectedFriends.length + 1
+    return selectedFriends.map((f) => ({
+      user_id: f.userId,
+      amount: splitType === 'equal'
+        ? roundToCents(amount / totalPeople)
+        : parseFloat(f.customAmount) || 0,
+    }))
+  }
 
   const handleSignOut = async () => { setSigningOut(true); await signOut(); navigate('/auth') }
   const kd = (e: React.KeyboardEvent, fn: () => void) => { if (e.key === 'Enter') { e.preventDefault(); fn() } }
@@ -88,9 +121,14 @@ export default function SettingsPage() {
     })
   }
 
-  const onCreateRecurring = (data: Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'last_created_at'>) => {
-    createRecurring.mutate(data, {
-      onSuccess: () => { setShowRecurringForm(false); recurringForm.reset() },
+  const onCreateRecurring = (data: Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'last_created_at' | 'generated_until'>) => {
+    createRecurring.mutate({ input: data, shares: buildRecurringShares(data.amount) }, {
+      onSuccess: () => {
+        setShowRecurringForm(false)
+        recurringForm.reset()
+        setSelectedFriends([])
+        setSplitType('equal')
+      },
     })
   }
 
@@ -99,6 +137,12 @@ export default function SettingsPage() {
     if (deleteTarget.type === 'budget') removeBudget.mutate(deleteTarget.id)
     else removeRecurring.mutate(deleteTarget.id)
     setDeleteTarget(null)
+  }
+
+  const confirmDeactivate = () => {
+    if (!deactivateTarget) return
+    deactivateRecurring.mutate(deactivateTarget.id)
+    setDeactivateTarget(null)
   }
 
   const TABS: { id: Tab; label: string }[] = [
@@ -398,10 +442,28 @@ export default function SettingsPage() {
                     <Input {...recurringForm.register('day_of_month', { valueAsNumber: true })} type="number" min="1" max="31" className="h-8 text-xs" />
                   </div>
                 </div>
+
+                <SplitSection
+                  accepted={acceptedFriends}
+                  userId={user!.id}
+                  amount={recurringAmount}
+                  selectedFriends={selectedFriends}
+                  splitType={splitType}
+                  onToggleFriend={toggleFriend}
+                  onUpdateCustomAmount={updateCustomAmount}
+                  onChangeSplitType={setSplitType}
+                  getOtherProfile={getOtherProfile}
+                />
+
                 <div className="flex gap-2">
                   <Button type="submit" size="sm" className="h-8" disabled={createRecurring.isPending}>Salvar</Button>
                   <Button type="button" variant="outline" size="sm" className="h-8"
-                    onClick={() => { setShowRecurringForm(false); recurringForm.reset() }}>
+                    onClick={() => {
+                      setShowRecurringForm(false)
+                      recurringForm.reset()
+                      setSelectedFriends([])
+                      setSplitType('equal')
+                    }}>
                     Cancelar
                   </Button>
                 </div>
@@ -429,7 +491,10 @@ export default function SettingsPage() {
                       {r.type === 'income' ? '+' : '-'} {formatCurrency(r.amount)}
                     </span>
                     <button
-                      onClick={() => toggleRecurring.mutate({ id: r.id, active: !r.active })}
+                      onClick={() => {
+                        if (r.active) setDeactivateTarget({ id: r.id, label: r.description })
+                        else activateRecurring.mutate(r.id)
+                      }}
                       className={cn('shrink-0 transition-colors', r.active ? 'text-primary' : 'text-muted-foreground')}
                     >
                       {r.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
@@ -444,6 +509,37 @@ export default function SettingsPage() {
                 ))}
               </ul>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'recorrentes' && sharedRecurring.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />Compartilhadas comigo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {sharedRecurring.map((r) => (
+                <li key={r.id} className="flex items-center gap-3 py-1.5">
+                  <Avatar className="h-7 w-7 shrink-0">
+                    {r.owner_profile?.avatar_url && <AvatarImage src={r.owner_profile.avatar_url} />}
+                    <AvatarFallback className="text-xs">{getInitials(r.owner_profile?.display_name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{r.description}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      Compartilhado por {r.owner_profile?.display_name ?? r.owner_profile?.username ?? 'um amigo'} · Dia {r.day_of_month}
+                    </p>
+                  </div>
+                  <span className="font-mono text-sm shrink-0 amount-expense">
+                    - {formatCurrency(r.split_amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       )}
@@ -518,11 +614,25 @@ export default function SettingsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title={deleteTarget?.type === 'budget' ? 'Remover orçamento' : 'Remover recorrente'}
-        description={`Tem certeza que deseja remover "${deleteTarget?.label}"?`}
+        description={
+          deleteTarget?.type === 'budget'
+            ? `Tem certeza que deseja remover "${deleteTarget?.label}"?`
+            : `Isso remove "${deleteTarget?.label}" e apaga os lançamentos futuros (a partir do mês seguinte). O mês atual e os anteriores continuam no histórico.`
+        }
         confirmLabel="Remover"
         destructive
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deactivateTarget}
+        title="Desativar recorrência"
+        description={`Isso mantém o lançamento de "${deactivateTarget?.label}" do mês atual e apaga os lançamentos dos meses seguintes (inclusive os compartilhados com amigos, se houver). Deseja continuar?`}
+        confirmLabel="Desativar"
+        destructive
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeactivateTarget(null)}
       />
     </div>
   )

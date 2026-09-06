@@ -10,7 +10,7 @@ async function enrichSharedRows(rows: Record<string, unknown>[]): Promise<Shared
   const txIds = [...new Set(rows.map((r) => r.transaction_id as string))]
   const { data: transactions } = await supabase
     .from('transactions')
-    .select('id, description, amount, type, category, payment_method, date, user_id')
+    .select('id, description, amount, type, category, payment_method, date, user_id, recurring_id')
     .in('id', txIds)
   const txMap = new Map((transactions ?? []).map((t) => [t.id, t]))
 
@@ -96,24 +96,24 @@ export async function approveSharedTransaction(
   // 1. Busca o shared_transaction (o amigo TEM acesso a essa linha — é dele)
   const { data: shared, error: fetchError } = await supabase
     .from('shared_transactions')
-    .select('id, transaction_id, split_amount, split_percentage')
+    .select('id, transaction_id, split_amount, split_percentage, recurring_id')
     .eq('id', sharedTransactionId)
     .eq('shared_with_user_id', userId)
     .single()
 
   if (fetchError || !shared) throw new Error('Compartilhamento não encontrado')
 
-  // 2. Busca a transação original SEPARADO (sem join — RLS do dono)
-  //    Usamos service role via RPC ou buscamos apenas os campos públicos
-  //    Como não temos RPC, buscamos via tabela — o Supabase permite se
-  //    tivermos a policy correta (patch SQL). Caso falhe, usa dados do shared.
+  // 2. Busca a transação original — a policy de SELECT libera para quem
+  //    tem um shared_transactions apontando pra ela (ver migration SQL)
   const { data: tx } = await supabase
     .from('transactions')
     .select('description, category, payment_method, date, amount')
     .eq('id', shared.transaction_id)
     .maybeSingle()
 
-  // 3. Insere a transação na conta do aprovador (user_id = auth.uid())
+  // 3. Insere a transação na conta do aprovador (user_id = auth.uid()),
+  //    propagando recurring_id pra permitir limpeza em cascata se o dono
+  //    desativar a recorrência mais tarde
   const { error: insertError } = await supabase
     .from('transactions')
     .insert({
@@ -124,6 +124,7 @@ export async function approveSharedTransaction(
       category: tx?.category ?? 'Outros',
       payment_method: tx?.payment_method ?? null,
       date: tx?.date ?? new Date().toISOString().split('T')[0],
+      recurring_id: shared.recurring_id ?? null,
     })
 
   if (insertError) throw new Error(`Erro ao criar transação: ${insertError.message}`)
