@@ -19,7 +19,7 @@ export async function fetchTransactionsForAnalytics(userId: string): Promise<Tra
 
 export function computeMonthlyStats(
   transactions: Transaction[],
-  monthsBack = 5,
+  monthsBack = 8,
   monthsForward = 3
 ): MonthlyStats[] {
   const now = new Date()

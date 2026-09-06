@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/feedback'
 import { Skeleton } from '@/shared/components/ui/display'
-import { formatCurrency, getMonthLabel, getCurrentMonthKey, getMonthOptions, cn } from '@/shared/lib/utils'
+import { formatCurrency, getMonthLabel, getCurrentMonthKey, getYearMonthOptions, cn } from '@/shared/lib/utils'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { TransactionForm } from '@/features/transactions/components/TransactionForm'
 import { TransactionList } from '@/features/transactions/components/TransactionList'
@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const { budgets } = useBudgets()
   const { recurring } = useRecurring()
   const { pending: pendingApprovals } = useApprovals()
-  const monthOptions = getMonthOptions()
+  const monthOptions = getYearMonthOptions()
   const monthScrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -256,7 +256,7 @@ export default function DashboardPage() {
       {/* Chart + Transactions */}
       <div className="grid lg:grid-cols-5 gap-4">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Últimos 6 meses</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Últimos 12 meses</CardTitle></CardHeader>
           <CardContent><MonthlyAreaChart data={monthlyStats} /></CardContent>
         </Card>
         <Card className="lg:col-span-3">

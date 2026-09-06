@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Skeleton } from '@/shared/components/ui/display'
-import { formatCurrency, getCurrentMonthKey, getMonthOptions } from '@/shared/lib/utils'
+import { formatCurrency, getCurrentMonthKey, getYearMonthOptions } from '@/shared/lib/utils'
 import { useAnalytics } from '@/features/analytics/hooks/useAnalytics'
 import {
   MonthlyAreaChart, CategoryPieChart, CategoryProgressBars, BalanceEvolutionChart,
@@ -17,7 +17,7 @@ import type { MonthlyStats } from '@/shared/types'
 export default function AnalyticsPage() {
   const [monthFilter, setMonthFilter] = useState(getCurrentMonthKey())
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
-  const monthOptions = getMonthOptions()
+  const monthOptions = getYearMonthOptions()
   const monthScrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
