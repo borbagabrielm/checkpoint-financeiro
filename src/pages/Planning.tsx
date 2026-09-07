@@ -63,7 +63,7 @@ export default function PlanningPage() {
       <div ref={monthScrollRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {monthOptions.map((opt) => (
           <button key={opt.value} data-month={opt.value} onClick={() => setMonthFilter(opt.value)}
-            className={cn('shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize',
+            className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize',
               monthFilter === opt.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
             {opt.label}
           </button>
@@ -139,7 +139,7 @@ export default function PlanningPage() {
                         {d.expense > 0 ? formatCurrency(d.expense) : '—'}
                       </td>
                       <td className={cn('px-4 py-1.5 text-right font-mono text-xs font-medium',
-                        d.balance < 0 ? 'text-[hsl(var(--expense))]' : 'text-foreground')}>
+                        d.balance < 0 ? 'text-[hsl(var(--expense))]' : 'text-[#3B3BFF]')}>
                         {d.balance < 0 ? '−' : ''}{formatCurrency(d.balance)}
                       </td>
                     </tr>

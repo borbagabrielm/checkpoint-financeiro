@@ -212,7 +212,7 @@ export default function FriendProfilePage() {
               <p className="text-[11px] text-white/55 leading-none mb-1">
                 {balance === 0 ? 'Tudo certo' : balance > 0 ? `${profile?.display_name?.split(' ')[0] ?? 'Ele'} te deve` : 'Você deve'}
               </p>
-              <p className="text-[26px] font-black text-[#AAFF47] leading-none tracking-tight">
+              <p className="text-[26px] font-black text-white leading-none tracking-tight">
                 {balance === 0 ? '🤝' : formatCurrency(Math.abs(balance))}
               </p>
             </div>

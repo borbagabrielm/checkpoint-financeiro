@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Plus, Target, Trash2, Pencil, Check, X } from 'lucide-react'
-import { Button } from '@/shared/components/ui/button'
+import { Button, TrailingIcon } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Skeleton } from '@/shared/components/ui/display'
@@ -92,9 +92,12 @@ export default function GoalsPage() {
           <h1 className="page-title">Metas financeiras</h1>
           <p className="page-subtitle">Acompanhe seus objetivos de economia</p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-4 w-4" />
+        <Button
+          onClick={() => setShowForm((v) => !v)}
+          className="shrink-0 bg-[hsl(var(--income-fill))] text-[#0A0A0A] hover:bg-[hsl(var(--income-fill)/0.85)] font-bold shadow-sm justify-between pl-5 pr-2"
+        >
           Nova meta
+          <TrailingIcon><Plus className="h-4 w-4" /></TrailingIcon>
         </Button>
       </div>
 

@@ -181,14 +181,14 @@ function MobileBottomNav() {
           {mobileMainItems.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} end={to === '/'}
               className={({ isActive }) =>
-                cn('flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-medium transition-colors',
+                cn('flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-[10px] font-medium transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground')}>
               <Icon className="h-5 w-5" />
               <span>{label}</span>
             </NavLink>
           ))}
           <button onClick={() => setShowMore((v) => !v)}
-            className={cn('flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-medium transition-colors',
+            className={cn('flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-[10px] font-medium transition-colors',
               showMore ? 'text-primary' : 'text-muted-foreground')}>
             {showMore ? <X className="h-5 w-5" /> : <MoreHorizontal className="h-5 w-5" />}
             <span>Mais</span>
@@ -199,7 +199,7 @@ function MobileBottomNav() {
       {showMore && (
         <>
           <div className="md:hidden fixed inset-0 z-30 bg-black/20" onClick={() => setShowMore(false)} />
-          <div className="md:hidden fixed bottom-16 left-2 right-2 z-40 bg-card border rounded-xl shadow-lg p-2 grid grid-cols-4 gap-1">
+          <div className="md:hidden fixed bottom-16 left-2 right-2 z-40 bg-card border rounded-lg shadow-lg p-2 grid grid-cols-4 gap-1">
             {mobileMoreItems.map(({ to, icon: Icon, label }) => (
               <NavLink key={to} to={to} onClick={() => setShowMore(false)}
                 className={({ isActive }) =>

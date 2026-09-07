@@ -131,12 +131,12 @@
 @layer components {
   /* ── Stat card — mantém padding p-5 como antes ── */
   .stat-card {
-    @apply bg-card rounded-xl border p-5 flex flex-col gap-3 shadow-sm
+    @apply bg-card rounded-lg border p-5 flex flex-col gap-3 shadow-sm
            hover:shadow-md transition-shadow duration-200;
   }
   /* Barra de acento opcional — usada só no Dashboard via elemento filho */
   .stat-card-accent-top {
-    @apply -mx-5 -mt-5 mb-2 h-[3px] rounded-t-xl;
+    @apply -mx-5 -mt-5 mb-2 h-[3px] rounded-t-lg;
   }
 
   .page-header { @apply mb-6; }

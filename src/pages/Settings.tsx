@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Moon, Sun, Monitor, LogOut, Palette, Tag, CreditCard, Bell,
-  Plus, X, RefreshCw, Trash2, ToggleLeft, ToggleRight, DollarSign,
+  Plus, X, RefreshCw, Trash2, DollarSign,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
@@ -10,6 +10,8 @@ import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectV
 import { Card, CardContent, CardHeader, CardTitle, Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
 import { Separator } from '@/shared/components/ui/display'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
+import { Switch } from '@/shared/components/ui/Switch'
+import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useTheme } from '@/shared/hooks/useTheme'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
@@ -169,7 +171,7 @@ export default function SettingsPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+              'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
               activeTab === tab.id
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -471,9 +473,10 @@ export default function SettingsPage() {
             )}
 
             {recurring.length === 0 && !showRecurringForm ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+                <RaxoPercentIcon size={16} fill="currentColor" className="opacity-30" />
                 Nenhuma transação recorrente. Adicione assinaturas, aluguel, salário...
-              </p>
+              </div>
             ) : (
               <ul className="space-y-2">
                 {recurring.map((r) => (
@@ -490,15 +493,13 @@ export default function SettingsPage() {
                     )}>
                       {r.type === 'income' ? '+' : '-'} {formatCurrency(r.amount)}
                     </span>
-                    <button
-                      onClick={() => {
-                        if (r.active) setDeactivateTarget({ id: r.id, label: r.description })
+                    <Switch
+                      checked={r.active}
+                      onCheckedChange={(checked) => {
+                        if (!checked) setDeactivateTarget({ id: r.id, label: r.description })
                         else activateRecurring.mutate(r.id)
                       }}
-                      className={cn('shrink-0 transition-colors', r.active ? 'text-primary' : 'text-muted-foreground')}
-                    >
-                      {r.active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-                    </button>
+                    />
                     <button
                       onClick={() => setDeleteTarget({ id: r.id, label: r.description, type: 'recurring' })}
                       className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"

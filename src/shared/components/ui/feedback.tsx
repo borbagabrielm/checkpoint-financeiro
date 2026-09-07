@@ -54,7 +54,7 @@ export const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl',
+        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg',
         className
       )}
       {...props}
@@ -126,13 +126,13 @@ export function ConfirmDialog({
         <DialogFooter className="gap-2 pt-2">
           <button
             onClick={onCancel}
-            className="flex-1 h-9 rounded-lg border border-input bg-background text-sm font-medium hover:bg-secondary transition-colors"
+            className="flex-1 h-9 rounded-full border border-input bg-background text-sm font-medium hover:bg-secondary transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-1 h-9 rounded-full text-sm font-medium transition-colors ${
               destructive
                 ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90'

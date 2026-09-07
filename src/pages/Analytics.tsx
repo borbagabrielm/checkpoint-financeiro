@@ -10,6 +10,8 @@ import {
   computeCategoryBreakdown, computeSummary, computeMonthlyStats,
 } from '@/features/analytics/services/analyticsService'
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
+import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/utils'
 import type { Transaction } from '@/shared/types'
 import type { MonthlyStats } from '@/shared/types'
@@ -67,13 +69,13 @@ export default function AnalyticsPage() {
         <button
           data-month="all"
           onClick={() => { setMonthFilter('all'); setCategoryFilter(null) }}
-          className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
         >
           Tudo
         </button>
         {monthOptions.map((m) => (
           <button key={m.value} data-month={m.value} onClick={() => { setMonthFilter(m.value); setCategoryFilter(null) }}
-            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${monthFilter === m.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${monthFilter === m.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
           >
             {m.label}
           </button>
@@ -108,7 +110,7 @@ export default function AnalyticsPage() {
         {[
           { label: categoryFilter ? 'Gasto na categoria' : 'Receitas', value: categoryFilter ? summary.expense : summary.income, icon: TrendingUp, cls: 'text-[hsl(var(--income))]' },
           { label: 'Despesas', value: summary.expense, icon: TrendingDown, cls: 'text-[hsl(var(--expense))]' },
-          { label: 'Saldo', value: summary.balance, icon: Wallet, cls: summary.balance >= 0 ? 'text-[hsl(var(--income))]' : 'text-[hsl(var(--expense))]' },
+          { label: 'Saldo', value: summary.balance, icon: Wallet, cls: summary.balance >= 0 ? 'text-[#3B3BFF]' : 'text-[hsl(var(--expense))]' },
         ].map(({ label, value, icon: Icon, cls }) => (
           <div key={label} className="stat-card">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -154,7 +156,8 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {filteredExpenseCategories.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+              <div className="flex items-center justify-center gap-2 h-48 text-muted-foreground text-sm">
+                <RaxoPercentIcon size={16} fill="currentColor" className="opacity-30" />
                 Sem despesas {categoryFilter ? `em ${categoryFilter}` : 'neste período'}
               </div>
             ) : (
@@ -171,7 +174,10 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {filteredExpenseCategories.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">Sem dados</div>
+              <div className="flex items-center justify-center gap-2 h-32 text-muted-foreground text-sm">
+                <RaxoPercentIcon size={16} fill="currentColor" className="opacity-30" />
+                Sem dados
+              </div>
             ) : (
               <CategoryProgressBars
                 items={categoryFilter ? filteredExpenseCategories : expenseCategories}
@@ -190,7 +196,8 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             {filteredIncomeCategories.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+              <div className="flex items-center justify-center gap-2 h-32 text-muted-foreground text-sm">
+                <RaxoPercentIcon size={16} fill="currentColor" className="opacity-30" />
                 Sem receitas {categoryFilter ? `em ${categoryFilter}` : 'neste período'}
               </div>
             ) : (
@@ -209,18 +216,18 @@ export default function AnalyticsPage() {
                 : 'Exporte suas transações do período selecionado em formato CSV.'}
             </p>
             <div className="flex gap-2 flex-wrap">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => exportCSV(filteredTransactions, monthFilter, categoryFilter)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
               >
                 📊 Baixar CSV ({filteredTransactions.length} transações)
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => exportPDF(filteredTransactions, summary, monthFilter, categoryFilter)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
               >
                 📄 Baixar PDF
-              </button>
+              </Button>
             </div>
           </CardContent>
         </Card>

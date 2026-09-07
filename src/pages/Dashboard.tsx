@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, TrendingUp, TrendingDown, Wallet, Clock, RefreshCw, CheckSquare, AlertTriangle } from 'lucide-react'
-import { Button } from '@/shared/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
+import { Button, TrailingIcon } from '@/shared/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/shared/components/ui/display'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/feedback'
 import { Skeleton } from '@/shared/components/ui/display'
 import { formatCurrency, getMonthLabel, getCurrentMonthKey, getYearMonthOptions, cn } from '@/shared/lib/utils'
@@ -105,13 +105,13 @@ export default function DashboardPage() {
             Resumo — <span className="text-foreground font-medium capitalize">{getMonthLabel(monthFilter)}</span>
           </p>
         </div>
-        {/* Botão CTA principal em lime */}
+        {/* Botão CTA principal em lime — ícone circular trailing (padrão Raxo) */}
         <Button
           onClick={openAdd}
-          className="shrink-0 bg-[hsl(var(--income-fill))] text-[#0A0A0A] hover:bg-[hsl(var(--income-fill)/0.85)] font-bold shadow-sm"
+          className="shrink-0 bg-[hsl(var(--income-fill))] text-[#0A0A0A] hover:bg-[hsl(var(--income-fill)/0.85)] font-bold shadow-sm justify-between pl-5 pr-2"
         >
-          <Plus className="h-4 w-4" />
           Nova transação
+          <TrailingIcon><Plus className="h-4 w-4" /></TrailingIcon>
         </Button>
       </div>
 
@@ -120,13 +120,13 @@ export default function DashboardPage() {
         <button
           data-month="all"
           onClick={() => setMonthFilter('all')}
-          className={cn('shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+          className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
             monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
           Todos
         </button>
         {monthOptions.map((opt) => (
           <button key={opt.value} data-month={opt.value} onClick={() => setMonthFilter(opt.value)}
-            className={cn('shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize',
+            className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize',
               monthFilter === opt.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
             {opt.label}
           </button>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
         {pendingApprovals.length > 0 && (
           <button
             onClick={() => navigate('/approvals')}
-            className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5 text-left hover:bg-primary/10 transition-colors"
+            className="w-full flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3.5 text-left hover:bg-primary/10 transition-colors"
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15 shrink-0">
               <CheckSquare className="h-4 w-4 text-primary" />
@@ -191,9 +191,9 @@ export default function DashboardPage() {
               </p>
               <p className="text-xs text-muted-foreground">Toque para revisar</p>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white shrink-0">
+            <Badge className="shrink-0 bg-primary text-primary-foreground">
               {pendingApprovals.length}
-            </span>
+            </Badge>
           </button>
         )}
 
@@ -201,7 +201,7 @@ export default function DashboardPage() {
         {upcomingRecurring.length > 0 && (
           <button
             onClick={() => navigate('/settings')}
-            className="w-full flex items-center gap-3 rounded-xl border bg-secondary/40 p-3.5 text-left hover:bg-secondary transition-colors"
+            className="w-full flex items-center gap-3 rounded-lg border bg-secondary/40 p-3.5 text-left hover:bg-secondary transition-colors"
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-secondary shrink-0">
               <RefreshCw className="h-4 w-4 text-muted-foreground" />

@@ -1,11 +1,11 @@
-import { useState, useRef, type ReactNode } from 'react'
+import { useState, useRef } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { ArrowRight, Check, Camera, Loader2, Bell, BellRing } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/shared/components/ui/button'
+import { Button, TrailingIcon } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
 import { AvatarCropModal } from '@/shared/components/ui/AvatarCropModal'
@@ -17,11 +17,6 @@ import { usePushSubscription } from '@/shared/hooks/usePushSubscription'
 import { supabase } from '@/shared/lib/supabase'
 import { queryKeys } from '@/shared/lib/queryKeys'
 import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
-
-// Ícone circular "moeda" trailing dos botões primários Aurora — ver §6.3
-function TrailingIcon({ children }: { children: ReactNode }) {
-  return <span className="aurora-btn-trailing-icon bg-[#0A0A0A] text-[#AAFF47]">{children}</span>
-}
 
 // ─── Steps ───────────────────────────────────────────────────
 const steps = ['Boas-vindas', 'Seu perfil', 'Primeira transação', 'Notificações', 'Pronto!'] as const

@@ -7,6 +7,7 @@ import { Input, Label } from '@/shared/components/ui/form-elements'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Badge, Skeleton } from '@/shared/components/ui/display'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
+import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
 import { cn, formatDate } from '@/shared/lib/utils'
 import { useImport } from '../hooks/useImport'
 import { fetchImportHistory, deleteImportSession } from '../services/importSessionService'
@@ -83,7 +84,10 @@ export default function ImportPage() {
               {historyQuery.isLoading ? (
                 <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
               ) : (historyQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma importação ainda.</p>
+                <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+                  <RaxoPercentIcon size={16} fill="currentColor" className="opacity-30" />
+                  Nenhuma importação ainda.
+                </div>
               ) : (() => {
                 const filtered = (historyQuery.data ?? []).filter((s) =>
                   !historySearch ||
@@ -91,9 +95,10 @@ export default function ImportPage() {
                   s.bank_id.toLowerCase().includes(historySearch.toLowerCase())
                 )
                 return filtered.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
+                  <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+                    <RaxoPercentIcon size={16} fill="currentColor" className="opacity-30" />
                     Nenhum resultado para "{historySearch}"
-                  </p>
+                  </div>
                 ) : (
                   <ul className="divide-y divide-border">
                     {filtered.map((s) => (

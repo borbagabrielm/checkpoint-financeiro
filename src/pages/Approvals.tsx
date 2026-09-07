@@ -104,7 +104,7 @@ export default function ApprovalsPage() {
 
       {/* Toolbar de seleção em lote */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-[#AAFF47]/40 bg-[#AAFF47]/5 p-3">
+        <div className="flex items-center gap-2 rounded-lg border border-[#AAFF47]/40 bg-[#AAFF47]/5 p-3">
           <span className="text-sm font-semibold flex-1 text-foreground">
             {selectedIds.size} selecionada{selectedIds.size > 1 ? 's' : ''}
           </span>
@@ -165,7 +165,7 @@ export default function ApprovalsPage() {
                   <li
                     key={item.id}
                     className={cn(
-                      'rounded-xl border p-4 space-y-3 animate-fade-in transition-colors',
+                      'rounded-lg border p-4 space-y-3 animate-fade-in transition-colors',
                       isSelected ? 'border-primary/40 bg-primary/5' : 'hover:bg-secondary/30'
                     )}
                   >

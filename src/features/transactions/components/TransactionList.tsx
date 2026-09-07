@@ -383,12 +383,19 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   'Reembolso':     { bg: '#E0F2FE', text: '#075985' },
 }
 
+// Fundo translúcido em vez de pastel opaco — assim o chip se mistura com a
+// superfície por trás (clara ou escura) em vez de estourar um bloco claro
+// fixo sobre um fundo escuro no dark mode.
+function withAlpha(hex: string, alpha = '33'): string {
+  return `${hex}${alpha}`
+}
+
 function getCategoryColor(category: string): { bg: string; text: string } {
   const clean = category.replace(/^\p{Emoji}\s*/u, '').trim()
   for (const [key, colors] of Object.entries(CATEGORY_COLORS)) {
-    if (clean.toLowerCase().includes(key.toLowerCase())) return colors
+    if (clean.toLowerCase().includes(key.toLowerCase())) return { bg: withAlpha(colors.bg), text: colors.text }
   }
-  return { bg: '#F1F5F9', text: '#475569' }
+  return { bg: withAlpha('#F1F5F9'), text: '#475569' }
 }
 
 // ─── Transaction item ─────────────────────────────────────────
