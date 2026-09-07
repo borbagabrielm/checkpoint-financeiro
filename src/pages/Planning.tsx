@@ -1,38 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/shared/components/ui/display'
+import { StatCard } from '@/shared/components/ui/StatCard'
 import { formatCurrency, getCurrentMonthKey, getYearMonthOptions, cn } from '@/shared/lib/utils'
 import { useAnalytics } from '@/features/analytics/hooks/useAnalytics'
 import { DailyBalanceChart } from '@/features/analytics/components/Charts'
 import { computeDailyBalances } from '@/features/planning/services/planningService'
-
-// ─── Stat card com barra de acento no topo (mesmo padrão do Dashboard) ─
-function StatCard({ label, value, icon: Icon, accentColor, valueColor, iconBg, loading }: {
-  label: string
-  value: number
-  icon: React.ElementType
-  accentColor: string
-  valueColor: string
-  iconBg: string
-  loading?: boolean
-}) {
-  return (
-    <div className="stat-card animate-fade-in">
-      <div className={cn('stat-card-accent-top', accentColor)} />
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
-        <div className={cn('p-2 rounded-lg', iconBg)}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-      {loading ? <Skeleton className="h-8 w-32" /> : (
-        <p className={cn('text-2xl font-display font-bold tracking-tight', valueColor)}>
-          {formatCurrency(value)}
-        </p>
-      )}
-    </div>
-  )
-}
 
 export default function PlanningPage() {
   const [monthFilter, setMonthFilter] = useState(getCurrentMonthKey())
@@ -53,7 +26,9 @@ export default function PlanningPage() {
   const todayKey = getCurrentMonthKey() === monthFilter ? new Date().getDate() : null
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="relative space-y-6 animate-fade-in">
+      <div className="absolute -top-8 -left-8 -right-8 h-36 bg-gradient-wave opacity-[0.07] blur-3xl -z-10 pointer-events-none" aria-hidden="true" />
+
       <div className="page-header">
         <h1 className="page-title">Planejamento</h1>
         <p className="page-subtitle">Acompanhe dia a dia como o mês está se desenrolando</p>

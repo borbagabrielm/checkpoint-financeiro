@@ -7,8 +7,9 @@ import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { Button } from '@/shared/components/ui/button'
 import { Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
-import { Card, CardContent, CardHeader, CardTitle, Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/display'
+import { Card, CardContent, CardHeader, CardTitle, Avatar, AvatarFallback, AvatarImage, Badge } from '@/shared/components/ui/display'
 import { Separator } from '@/shared/components/ui/display'
+import { Gauge } from '@/shared/components/ui/Gauge'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
 import { Switch } from '@/shared/components/ui/Switch'
 import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
@@ -38,6 +39,9 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { preferences, save } = useUserPreferences()
   const { budgets, upsert: upsertBudget, remove: removeBudget } = useBudgets()
+  const overallBudgetPct = budgets.length
+    ? Math.min(100, (budgets.reduce((s, b) => s + (b.spent ?? 0), 0) / (budgets.reduce((s, b) => s + b.amount, 0) || 1)) * 100)
+    : 0
   const { recurring, create: createRecurring, activate: activateRecurring, deactivate: deactivateRecurring, remove: removeRecurring } = useRecurring()
   const { sharedRecurring } = useSharedRecurring()
   const { accepted: acceptedFriends } = useFriends()
@@ -255,6 +259,24 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {budgets.length > 0 && (
+              <div className="flex items-center gap-4 pb-3 border-b border-border">
+                <Gauge
+                  value={overallBudgetPct}
+                  size={80}
+                  strokeWidth={8}
+                  color={overallBudgetPct >= 90 ? 'hsl(var(--expense))' : '#3B3BFF'}
+                  label={<span className="text-sm font-bold">{overallBudgetPct.toFixed(0)}%</span>}
+                />
+                <div>
+                  <p className="text-sm font-medium">Saúde do orçamento</p>
+                  <p className="text-xs text-muted-foreground mb-1.5">Gasto total vs. orçado este mês</p>
+                  <Badge variant={overallBudgetPct >= 90 ? 'rejected' : 'approved'}>
+                    {overallBudgetPct >= 90 ? 'Ruim' : 'Bom'}
+                  </Badge>
+                </div>
+              </div>
+            )}
             {budgets.length > 0 && (
               <ul className="space-y-2">
                 {budgets.map((b) => (

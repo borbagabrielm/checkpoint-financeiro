@@ -4,6 +4,7 @@ import { Button, TrailingIcon } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, Badge } from '@/shared/components/ui/display'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/feedback'
 import { Skeleton } from '@/shared/components/ui/display'
+import { StatCard } from '@/shared/components/ui/StatCard'
 import { formatCurrency, getMonthLabel, getCurrentMonthKey, getYearMonthOptions, cn } from '@/shared/lib/utils'
 import { useTransactions } from '@/features/transactions/hooks/useTransactions'
 import { TransactionForm } from '@/features/transactions/components/TransactionForm'
@@ -15,36 +16,6 @@ import { useRecurring } from '@/features/recurring/hooks/useRecurring'
 import { useApprovals } from '@/features/shared-expenses/hooks/useApprovals'
 import { useNavigate } from 'react-router-dom'
 import type { Transaction } from '@/shared/types'
-
-// ─── Stat card com barra de acento no topo ────────────────────
-function StatCard({ label, value, icon: Icon, accentColor, valueColor, iconBg, loading, isCount = false }: {
-  label: string
-  value: number
-  icon: React.ElementType
-  accentColor: string   // cor da barra topo
-  valueColor: string    // cor do valor
-  iconBg: string        // bg do ícone
-  loading?: boolean
-  isCount?: boolean
-}) {
-  return (
-    <div className="stat-card animate-fade-in">
-      {/* Barra de acento no topo — usa margem negativa para não quebrar o padding do card */}
-      <div className={cn('stat-card-accent-top', accentColor)} />
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
-        <div className={cn('p-2 rounded-lg', iconBg)}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-      {loading ? <Skeleton className="h-8 w-32" /> : (
-        <p className={cn('text-2xl font-display font-bold tracking-tight', valueColor)}>
-          {isCount ? value : formatCurrency(value)}
-        </p>
-      )}
-    </div>
-  )
-}
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -81,6 +52,16 @@ export default function DashboardPage() {
 
   const alertBudgets = budgets.filter((b) => (b.percentage ?? 0) >= 70)
 
+  // Insight simples: compara despesas do mês vigente com o mês anterior
+  const currentMonthKey = getCurrentMonthKey()
+  const [insightYear, insightMonth] = currentMonthKey.split('-').map(Number)
+  const prevMonthKey = insightMonth === 1 ? `${insightYear - 1}-12` : `${insightYear}-${String(insightMonth - 1).padStart(2, '0')}`
+  const currentMonthStats = monthlyStats.find((m) => m.month === currentMonthKey)
+  const prevMonthStats = monthlyStats.find((m) => m.month === prevMonthKey)
+  const expenseDelta = currentMonthStats && prevMonthStats && prevMonthStats.expense > 0
+    ? ((currentMonthStats.expense - prevMonthStats.expense) / prevMonthStats.expense) * 100
+    : null
+
   // Cor semântica da barra de orçamento
   const budgetBarColor = (pct: number) => {
     if (pct >= 100) return 'bg-[hsl(var(--expense))]'
@@ -95,7 +76,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="relative space-y-6 animate-fade-in">
+      {/* Onda decorativa — só ambiente, nunca codifica dado real (RAXO-DESIGN-SYSTEM-V2.md §2.5) */}
+      <div className="absolute -top-8 -left-8 -right-8 h-36 bg-gradient-wave opacity-[0.07] blur-3xl -z-10 pointer-events-none" aria-hidden="true" />
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -152,6 +135,7 @@ export default function DashboardPage() {
           valueColor="text-[hsl(var(--income))]"
           iconBg="bg-[hsl(var(--income-fill)/0.15)]"
           loading={isLoading}
+          trend={monthlyStats.map((m) => m.income)}
         />
         <StatCard
           label="Despesas"
@@ -161,6 +145,7 @@ export default function DashboardPage() {
           valueColor="text-[hsl(var(--expense))]"
           iconBg="bg-[hsl(var(--expense)/0.12)]"
           loading={isLoading}
+          trend={monthlyStats.map((m) => m.expense)}
         />
         <StatCard
           label="Movimentações"
@@ -173,6 +158,21 @@ export default function DashboardPage() {
           isCount
         />
       </div>
+
+      {/* Insight do mês — card escuro Aurora trazido pro Core */}
+      {expenseDelta !== null && Math.abs(expenseDelta) >= 10 && (
+        <div className="aurora-card-dark p-5">
+          <div className="absolute inset-0 dot-grid-texture opacity-[0.15] pointer-events-none" aria-hidden="true" />
+          <div className="relative">
+            <p className="text-xs text-white/60 mb-1">Insight do mês</p>
+            <p className="font-semibold text-base leading-snug">
+              {expenseDelta > 0
+                ? `Suas despesas subiram ${expenseDelta.toFixed(0)}% em relação a ${getMonthLabel(prevMonthKey)}`
+                : `Suas despesas caíram ${Math.abs(expenseDelta).toFixed(0)}% em relação a ${getMonthLabel(prevMonthKey)}`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Alertas inline */}
       <div className="space-y-2">

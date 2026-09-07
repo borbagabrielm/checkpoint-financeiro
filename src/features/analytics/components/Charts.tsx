@@ -85,9 +85,10 @@ export function CategoryPieChart({ data }: { data: CategoryBreakdown[] }) {
       {/* Legenda externa com cor + nome + valor + % */}
       <ul className="flex-1 space-y-1.5 min-w-0">
         {top.map((item, i) => (
-          <li key={item.category} className="flex items-center gap-2 min-w-0">
+          <li key={item.category} className="flex items-center gap-1.5 min-w-0">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }} />
-            <span className="text-xs text-muted-foreground truncate flex-1">{item.category.replace(/^\p{Emoji}\s*/u, '')}</span>
+            <span className="text-xs text-muted-foreground shrink-0 max-w-[45%] truncate">{item.category.replace(/^\p{Emoji}\s*/u, '')}</span>
+            <span className="flex-1 border-b border-dotted border-border/70 min-w-[8px] mb-0.5" />
             <span className="text-xs font-mono font-medium shrink-0">{((item.amount / total) * 100).toFixed(0)}%</span>
           </li>
         ))}

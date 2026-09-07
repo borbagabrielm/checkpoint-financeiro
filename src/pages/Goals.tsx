@@ -14,6 +14,7 @@ import { useGoals } from '@/features/goals/hooks/useGoals'
 import { useUserPreferences } from '@/shared/hooks/useUserPreferences'
 import type { FinancialGoal } from '@/shared/types'
 import { EmptyState } from '@/shared/components/ui/EmptyState'
+import { Gauge } from '@/shared/components/ui/Gauge'
 
 const schema = z.object({
   title: z.string().min(1, 'Nome obrigatório'),
@@ -223,38 +224,32 @@ export default function GoalsPage() {
                     </div>
                   </div>
 
-                  {/* Barra de progresso — visual melhorado */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <span className={cn('text-xl font-bold font-mono tracking-tight',
-                        isDone ? 'text-[hsl(var(--income))]' : 'text-foreground')}>
-                        {formatCurrency(goal.current_amount)}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-mono">
-                        de {formatCurrency(goal.target_amount)}
-                      </span>
-                    </div>
-                    {/* Barra grossa com cor semântica */}
-                    <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${pct}%`,
-                          background: isDone
-                            ? '#22A800'
-                            : pct >= 75 ? '#AAFF47'
-                            : pct >= 40 ? '#3B3BFF'
-                            : '#888',
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className={cn('text-xs font-bold',
-                        isDone ? 'text-[hsl(var(--income))]'
-                        : pct >= 75 ? 'text-[hsl(var(--income))]'
-                        : 'text-primary')}>
-                        {pct.toFixed(0)}%
-                      </span>
+                  {/* Progresso — gauge + valores */}
+                  <div className="flex items-center gap-4">
+                    <Gauge
+                      value={pct}
+                      size={72}
+                      strokeWidth={7}
+                      color={isDone ? '#22A800' : pct >= 75 ? '#AAFF47' : pct >= 40 ? '#3B3BFF' : '#9C9C96'}
+                      label={
+                        <span className={cn('text-xs font-bold',
+                          isDone ? 'text-[hsl(var(--income))]'
+                          : pct >= 75 ? 'text-[hsl(var(--income))]'
+                          : 'text-primary')}>
+                          {pct.toFixed(0)}%
+                        </span>
+                      }
+                    />
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex justify-between items-baseline">
+                        <span className={cn('text-xl font-bold font-mono tracking-tight',
+                          isDone ? 'text-[hsl(var(--income))]' : 'text-foreground')}>
+                          {formatCurrency(goal.current_amount)}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          de {formatCurrency(goal.target_amount)}
+                        </span>
+                      </div>
                       {!isDone && (
                         <span className="text-xs text-muted-foreground">
                           Faltam <span className="font-mono font-medium text-foreground">{formatCurrency(remaining)}</span>
