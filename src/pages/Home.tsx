@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import {
   Plus, TrendingUp, TrendingDown, Target, RefreshCw, CheckSquare, AlertTriangle,
 } from 'lucide-react'
@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button, TrailingIcon } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } from '@/shared/components/ui/display'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/feedback'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { Sparkline } from '@/shared/components/ui/Sparkline'
 import { Gauge } from '@/shared/components/ui/Gauge'
 import { OrganicWave } from '@/shared/components/ui/OrganicWave'
@@ -46,7 +47,6 @@ export default function HomePage() {
   const { goals } = useGoals()
   const { accepted: friends } = useFriends()
   const monthOptions = getYearMonthOptions()
-  const monthScrollRef = useRef<HTMLDivElement>(null)
 
   const recebeuRef = useRef<HTMLDivElement>(null)
   const guardadoRef = useRef<HTMLDivElement>(null)
@@ -59,11 +59,6 @@ export default function HomePage() {
     setActiveStage(stage)
     stageRefs[stage].current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
-
-  useEffect(() => {
-    const el = monthScrollRef.current?.querySelector<HTMLElement>(`[data-month="${monthFilter}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [monthFilter])
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (tx: Transaction) => { setEditing(tx); setFormOpen(true) }
@@ -147,23 +142,20 @@ export default function HomePage() {
         <ContextRail items={STAGE_ITEMS} active={activeStage} onSelect={scrollToStage} />
 
         <div className="flex-1 min-w-0 space-y-6">
-          {/* Filtros de mês */}
-          <div ref={monthScrollRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            <button
-              data-month="all"
-              onClick={() => setMonthFilter('all')}
-              className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-                monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
-              Todos
-            </button>
-            {monthOptions.map((opt) => (
-              <button key={opt.value} data-month={opt.value} onClick={() => setMonthFilter(opt.value)}
-                className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize',
-                  monthFilter === opt.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {/* Filtro de período */}
+          <Select value={monthFilter} onValueChange={setMonthFilter}>
+            <SelectTrigger className="w-auto h-auto gap-1.5 rounded-full border-0 bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {monthOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="capitalize">
+                  {opt.value === getCurrentMonthKey() ? 'Este mês' : opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Jornada Recebeu → Guardado → Gasto + painel de resumo */}
           <div className="grid lg:grid-cols-5 gap-4">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/display'
 import { Skeleton } from '@/shared/components/ui/display'
 import { formatCurrency, getCurrentMonthKey, getYearMonthOptions } from '@/shared/lib/utils'
@@ -12,6 +12,7 @@ import {
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
 import { Button } from '@/shared/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { cn } from '@/shared/lib/utils'
 import type { Transaction } from '@/shared/types'
 import type { MonthlyStats } from '@/shared/types'
@@ -20,12 +21,8 @@ export default function AnalyticsPage() {
   const [monthFilter, setMonthFilter] = useState(getCurrentMonthKey())
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const monthOptions = getYearMonthOptions()
-  const monthScrollRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const el = monthScrollRef.current?.querySelector<HTMLElement>(`[data-month="${monthFilter}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [monthFilter])
+  const onMonthChange = (value: string) => { setMonthFilter(value); setCategoryFilter(null) }
 
   const { transactions, allTransactions, expenseCategories, isLoading } =
     useAnalytics(monthFilter)
@@ -64,23 +61,20 @@ export default function AnalyticsPage() {
         <p className="page-subtitle">Entenda seus padrões de gastos</p>
       </div>
 
-      {/* Filtro de mês */}
-      <div ref={monthScrollRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-        <button
-          data-month="all"
-          onClick={() => { setMonthFilter('all'); setCategoryFilter(null) }}
-          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${monthFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-        >
-          Tudo
-        </button>
-        {monthOptions.map((m) => (
-          <button key={m.value} data-month={m.value} onClick={() => { setMonthFilter(m.value); setCategoryFilter(null) }}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${monthFilter === m.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
+      {/* Filtro de período */}
+      <Select value={monthFilter} onValueChange={onMonthChange}>
+        <SelectTrigger className="w-auto h-auto gap-1.5 rounded-full border-0 bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tudo</SelectItem>
+          {monthOptions.map((m) => (
+            <SelectItem key={m.value} value={m.value} className="capitalize">
+              {m.value === getCurrentMonthKey() ? 'Este mês' : m.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       {/* Filtro de categoria */}
       {expenseCategories.length > 0 && (

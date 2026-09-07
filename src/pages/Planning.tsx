@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/shared/components/ui/display'
 import { StatCard } from '@/shared/components/ui/StatCard'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/form-elements'
 import { formatCurrency, getCurrentMonthKey, getYearMonthOptions, cn } from '@/shared/lib/utils'
 import { useAnalytics } from '@/features/analytics/hooks/useAnalytics'
 import { DailyBalanceChart } from '@/features/analytics/components/Charts'
@@ -11,12 +12,6 @@ export default function PlanningPage() {
   const [monthFilter, setMonthFilter] = useState(getCurrentMonthKey())
   const { summary, transactions, isLoading } = useAnalytics(monthFilter)
   const monthOptions = getYearMonthOptions()
-  const monthScrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = monthScrollRef.current?.querySelector<HTMLElement>(`[data-month="${monthFilter}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [monthFilter])
 
   const dailyBalances = useMemo(
     () => computeDailyBalances(transactions, monthFilter),
@@ -34,16 +29,19 @@ export default function PlanningPage() {
         <p className="page-subtitle">Acompanhe dia a dia como o mês está se desenrolando</p>
       </div>
 
-      {/* Filtros de mês */}
-      <div ref={monthScrollRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-        {monthOptions.map((opt) => (
-          <button key={opt.value} data-month={opt.value} onClick={() => setMonthFilter(opt.value)}
-            className={cn('shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize',
-              monthFilter === opt.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground')}>
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      {/* Filtro de período */}
+      <Select value={monthFilter} onValueChange={setMonthFilter}>
+        <SelectTrigger className="w-auto h-auto gap-1.5 rounded-full border-0 bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {monthOptions.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value} className="capitalize">
+              {opt.value === getCurrentMonthKey() ? 'Este mês' : opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
