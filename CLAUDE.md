@@ -81,6 +81,10 @@ supabase/
 
 ## Identidade Visual Raxo
 
+Documento completo (paleta, tipografia, grid, componentes, modos Core/Aurora):
+`RAXO-DESIGN-SYSTEM-V2.md` na raiz do repo — fonte de verdade única, reconciliada
+em Setembro 2026 (substitui quaisquer outras versões de design system soltas).
+
 ### Paleta de cores — REGRAS ESTRITAS
 
 | Cor | Hex | Uso |
