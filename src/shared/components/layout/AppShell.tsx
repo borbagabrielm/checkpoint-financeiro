@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, BarChart3, Users, CheckSquare,
+  LayoutDashboard, BarChart3, CalendarDays, Users, CheckSquare,
   Settings, LogOut, FileUp, Target, Search, MoreHorizontal, X, Sun, Moon
 } from 'lucide-react'
 import { useState as useMobileMenuState } from 'react'
@@ -21,6 +21,7 @@ const APP_NAME = 'Raxo'
 const navItems = [
   { to: '/',          icon: LayoutDashboard, label: 'Dashboard'  },
   { to: '/analytics', icon: BarChart3,       label: 'Análises'   },
+  { to: '/planning',  icon: CalendarDays,    label: 'Planejamento' },
   { to: '/social',    icon: Users,           label: 'Amigos'     },
   { to: '/approvals', icon: CheckSquare,     label: 'Aprovações' },
   { to: '/search',    icon: Search,          label: 'Buscar'     },

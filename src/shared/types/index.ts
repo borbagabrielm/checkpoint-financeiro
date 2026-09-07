@@ -116,6 +116,16 @@ export interface Friendship {
   addressee_profile?: UserProfile
 }
 
+// ─── Planning ─────────────────────────────────────────────────
+export interface DailyBalance {
+  day: number       // 1..N (dia do mês)
+  date: string       // yyyy-MM-dd
+  label: string      // rótulo pro eixo do gráfico ("1", "2", ...)
+  income: number     // receita lançada nesse dia
+  expense: number    // despesa lançada nesse dia
+  balance: number    // saldo acumulado até esse dia (dentro do mês)
+}
+
 // ─── Analytics ────────────────────────────────────────────────
 export interface MonthlyStats {
   month: string // YYYY-MM

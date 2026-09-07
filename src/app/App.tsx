@@ -27,6 +27,7 @@ import FriendProfilePage from '@/pages/FriendProfile'
 import InvitePage from '@/pages/InvitePage'
 import GoalsPage from '@/pages/Goals'
 import SearchPage from '@/pages/SearchPage'
+import PlanningPage from '@/pages/Planning'
 
 // ─── Query Client — staleTime 0 para sempre buscar dados frescos ──
 const queryClient = new QueryClient({
@@ -121,6 +122,7 @@ function AppRoutes() {
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/planning" element={<PlanningPage />} />
                 <Route path="/social" element={<SocialPage />} />
                 <Route path="/approvals" element={<ApprovalsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

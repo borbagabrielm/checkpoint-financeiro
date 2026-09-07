@@ -1,9 +1,9 @@
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
+  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, ReferenceLine,
 } from 'recharts'
 import { cn, formatCurrency } from '@/shared/lib/utils'
-import type { MonthlyStats, CategoryBreakdown } from '@/shared/types'
+import type { MonthlyStats, CategoryBreakdown, DailyBalance } from '@/shared/types'
 
 // ─── Cores da identidade Raxo ────────────────────────────────
 const INCOME_COLOR  = '#22A800'   // verde legível
@@ -183,6 +183,64 @@ export function MonthlyBarChart({ data }: { data: MonthlyStats[] }) {
         <Bar dataKey="income" name="Receitas" fill={INCOME_COLOR} radius={[4, 4, 0, 0]} maxBarSize={32} />
         <Bar dataKey="expense" name="Despesas" fill={EXPENSE_COLOR} radius={[4, 4, 0, 0]} maxBarSize={32} />
       </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+// ─── Saldo diário (Planejamento) ──────────────────────────────
+// Série única, sem legenda (o título do card já diz o que é). A cor troca
+// de azul pra vermelho exatamente no cruzamento com zero — mesma dupla
+// azul/vermelho já usada pro saldo em todo o app (ver CLAUDE.md) — pra
+// deixar visualmente óbvio em que dia o saldo do mês fica negativo.
+export function DailyBalanceChart({ data }: { data: DailyBalance[] }) {
+  if (!data?.length) return (
+    <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
+      Sem dados suficientes
+    </div>
+  )
+
+  const values = data.map((d) => d.balance)
+  const rawMax = Math.max(...values, 0)
+  const rawMin = Math.min(...values, 0)
+  const pad = (rawMax - rawMin || 1) * 0.12
+  const max = rawMax + pad
+  const min = rawMin - pad
+  const range = max - min || 1
+  const zeroOffset = Math.min(1, Math.max(0, max / range))
+
+  const tickInterval = Math.max(0, Math.ceil(data.length / 8) - 1)
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+        <defs>
+          <linearGradient id="dailyBalanceLine" x1="0" y1="0" x2="0" y2="1">
+            <stop offset={0} stopColor={PRIMARY_COLOR} />
+            <stop offset={zeroOffset} stopColor={PRIMARY_COLOR} />
+            <stop offset={zeroOffset} stopColor={EXPENSE_COLOR} />
+            <stop offset={1} stopColor={EXPENSE_COLOR} />
+          </linearGradient>
+          <linearGradient id="dailyBalanceFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset={0} stopColor={PRIMARY_COLOR} stopOpacity={0.12} />
+            <stop offset={zeroOffset} stopColor={PRIMARY_COLOR} stopOpacity={0.12} />
+            <stop offset={zeroOffset} stopColor={EXPENSE_COLOR} stopOpacity={0.12} />
+            <stop offset={1} stopColor={EXPENSE_COLOR} stopOpacity={0.12} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+        <XAxis dataKey="label" interval={tickInterval}
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+        <YAxis domain={[min, max]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          axisLine={false} tickLine={false} tickFormatter={(v) => `R$${(v / 1000).toFixed(1)}k`} />
+        <ReferenceLine y={0} stroke="hsl(var(--border))" />
+        <Tooltip
+          labelFormatter={(v) => `Dia ${v}`}
+          formatter={(v: number) => [formatCurrency(v), 'Saldo']}
+          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+        />
+        <Area type="monotone" dataKey="balance" name="Saldo"
+          stroke="url(#dailyBalanceLine)" strokeWidth={2} fill="url(#dailyBalanceFill)" />
+      </AreaChart>
     </ResponsiveContainer>
   )
 }
