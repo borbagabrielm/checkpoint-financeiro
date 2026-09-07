@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import {
-  Plus, TrendingUp, TrendingDown, Target, RefreshCw, CheckSquare, AlertTriangle,
+  Plus, TrendingUp, TrendingDown, Target, RefreshCw, CheckSquare, AlertTriangle, Heart, HeartCrack,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button, TrailingIcon } from '@/shared/components/ui/button'
@@ -93,6 +93,19 @@ export default function HomePage() {
     ? goals.reduce((s, g) => s + Math.min(100, (g.current_amount / g.target_amount) * 100), 0) / goals.length
     : 0
 
+  // Saúde financeira — quanto das receitas as despesas do mês representam
+  const healthPct = summary.income > 0
+    ? (summary.expense / summary.income) * 100
+    : (summary.expense > 0 ? 999 : 0)
+  const healthState: 'good' | 'warning' | 'danger' =
+    healthPct <= 85 ? 'good' : healthPct <= 100 ? 'warning' : 'danger'
+  const HEALTH_COLORS = {
+    good:    { circle: '#AAFF47', icon: '#0A0A0A' },
+    warning: { circle: '#F59E0B', icon: '#0A0A0A' },
+    danger:  { circle: '#FF4747', icon: '#FFFFFF' },
+  } as const
+  const HealthIcon = healthState === 'danger' ? HeartCrack : Heart
+
   // Cor semântica da barra de orçamento
   const budgetBarColor = (pct: number) => {
     if (pct >= 100) return 'bg-[hsl(var(--expense))]'
@@ -122,20 +135,62 @@ export default function HomePage() {
       <div className="absolute -top-8 -left-8 -right-8 h-36 bg-gradient-wave opacity-[0.07] blur-3xl -z-10 pointer-events-none" aria-hidden="true" />
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="page-header">
-          <h1 className="page-title">Início</h1>
-          <p className="page-subtitle">
-            Sua jornada financeira — <span className="text-foreground font-medium capitalize">{getMonthLabel(monthFilter)}</span>
-          </p>
+          <h1 className="page-title">Sua jornada financeira</h1>
         </div>
-        <Button
-          onClick={openAdd}
-          className="shrink-0 bg-[hsl(var(--income-fill))] text-[#0A0A0A] hover:bg-[hsl(var(--income-fill)/0.85)] font-bold shadow-sm justify-between pl-5 pr-2"
-        >
-          Nova transação
-          <TrailingIcon><Plus className="h-4 w-4" /></TrailingIcon>
-        </Button>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button
+            onClick={openAdd}
+            className="shrink-0 bg-[hsl(var(--income-fill))] text-[#0A0A0A] hover:bg-[hsl(var(--income-fill)/0.85)] font-bold shadow-sm justify-between pl-5 pr-2"
+          >
+            Nova transação
+            <TrailingIcon><Plus className="h-4 w-4" /></TrailingIcon>
+          </Button>
+
+          {/* Saúde financeira — quanto das receitas as despesas do mês já consumiram */}
+          <div className="rounded-lg border bg-card p-4 w-full sm:w-[290px] shrink-0">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h3 className="text-sm font-semibold">Saúde Financeira</h3>
+              <div
+                className="flex items-center justify-center h-8 w-8 rounded-full shrink-0"
+                style={{ background: HEALTH_COLORS[healthState].circle }}
+              >
+                <HealthIcon className="h-4 w-4" style={{ color: HEALTH_COLORS[healthState].icon }} />
+              </div>
+            </div>
+
+            <div className="relative mb-4">
+              <div className="aurora-progress-track">
+                <div
+                  className="aurora-progress-fill"
+                  style={{ width: `${Math.min(100, healthPct)}%`, background: HEALTH_COLORS[healthState].circle }}
+                />
+              </div>
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                style={{ left: `${Math.min(100, healthPct)}%` }}
+              >
+                <span className="aurora-diamond border-2 border-white shadow-sm" style={{ background: HEALTH_COLORS[healthState].circle }} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Saldo</p>
+                <p className={cn('text-base font-bold font-mono',
+                  summary.balance >= 0 ? 'text-[#3B3BFF]' : 'text-[hsl(var(--expense))]')}>
+                  {formatCurrency(summary.balance)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Comprometido</p>
+                <p className="text-base font-bold font-mono">{Math.round(healthPct)}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-6">
