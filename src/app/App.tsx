@@ -16,7 +16,7 @@ import { sendFriendRequest } from '@/features/social/services/socialService'
 
 // Pages
 import AuthPage from '@/pages/Auth'
-import DashboardPage from '@/pages/Dashboard'
+import HomePage from '@/pages/Home'
 import AnalyticsPage from '@/pages/Analytics'
 import SocialPage from '@/pages/Social'
 import ApprovalsPage from '@/pages/Approvals'
@@ -120,7 +120,7 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppShell>
               <Routes>
-                <Route path="/" element={<DashboardPage />} />
+                <Route path="/" element={<HomePage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/planning" element={<PlanningPage />} />
                 <Route path="/social" element={<SocialPage />} />

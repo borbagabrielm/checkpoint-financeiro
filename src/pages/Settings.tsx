@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, Avatar, AvatarFallback, Avata
 import { Separator } from '@/shared/components/ui/display'
 import { Gauge } from '@/shared/components/ui/Gauge'
 import { ConfirmDialog } from '@/shared/components/ui/feedback'
+import { ContextRail, type ContextRailItem } from '@/shared/components/layout/ContextRail'
 import { Switch } from '@/shared/components/ui/Switch'
 import { RaxoPercentIcon } from '@/shared/components/ui/RaxoIcon'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -151,40 +152,26 @@ export default function SettingsPage() {
     setDeactivateTarget(null)
   }
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'aparencia',   label: 'Aparência' },
-    { id: 'orcamentos',  label: 'Orçamentos' },
-    { id: 'categorias',  label: 'Categorias' },
-    { id: 'recorrentes', label: 'Recorrentes' },
-    { id: 'pagamentos',  label: 'Pagamentos' },
+  const TABS: ContextRailItem[] = [
+    { id: 'aparencia',   label: 'Aparência',   icon: Palette },
+    { id: 'orcamentos',  label: 'Orçamentos',  icon: DollarSign },
+    { id: 'categorias',  label: 'Categorias',  icon: Tag },
+    { id: 'recorrentes', label: 'Recorrentes', icon: RefreshCw },
+    { id: 'pagamentos',  label: 'Pagamentos',  icon: CreditCard },
   ]
 
   const incomeCategories = preferences.income_categories ?? DEFAULT_INCOME_CATEGORIES
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-2xl">
+    <div className="space-y-6 animate-fade-in max-w-4xl">
       <div className="page-header">
         <h1 className="page-title">Configurações</h1>
         <p className="page-subtitle">Personalize sua experiência</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-              activeTab === tab.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="flex gap-6">
+        <ContextRail items={TABS} active={activeTab} onSelect={(id) => setActiveTab(id as Tab)} />
+        <div className="flex-1 min-w-0 space-y-6">
 
       {/* ── APARÊNCIA ─────────────────────────────────── */}
       {activeTab === 'aparencia' && (
@@ -633,6 +620,9 @@ export default function SettingsPage() {
           </Card>
         </div>
       )}
+
+        </div>
+      </div>
 
       <ConfirmDialog
         open={!!deleteTarget}

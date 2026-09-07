@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, BarChart3, CalendarDays, Users, CheckSquare,
-  Settings, LogOut, FileUp, Target, Search, MoreHorizontal, X, Sun, Moon
+  Settings, LogOut, FileUp, Target, Search, MoreHorizontal, X, Sun, Moon,
 } from 'lucide-react'
-import { useState as useMobileMenuState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/shared/lib/utils'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -16,10 +16,8 @@ import { NotificationBell } from '@/shared/components/ui/NotificationPanel'
 import { supabase } from '@/shared/lib/supabase'
 import { queryKeys } from '@/shared/lib/queryKeys'
 
-const APP_NAME = 'Raxo'
-
 const navItems = [
-  { to: '/',          icon: LayoutDashboard, label: 'Dashboard'  },
+  { to: '/',          icon: LayoutDashboard, label: 'Home'       },
   { to: '/analytics', icon: BarChart3,       label: 'Análises'   },
   { to: '/planning',  icon: CalendarDays,    label: 'Planejamento' },
   { to: '/social',    icon: Users,           label: 'Amigos'     },
@@ -48,26 +46,6 @@ function RaxoLogo({ height = 28 }: { height?: number }) {
       {/* o */}
       <path d="M629.26,223.62c25.68,0,44.42,17.12,44.42,42.64s-18.74,42.48-44.42,42.48-44.58-16.96-44.58-42.48,18.74-42.64,44.58-42.64ZM629.26,286.45c11.47,0,19.38-8.08,19.38-20.35s-7.91-20.19-19.38-20.19-19.54,8.08-19.54,20.19,7.91,20.35,19.54,20.35Z" className="fill-foreground"/>
     </svg>
-  )
-}
-
-function NavItem({ to, icon: Icon, label }: { to: string; icon: React.ElementType; label: string }) {
-  return (
-    <NavLink
-      to={to}
-      end={to === '/'}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
-          isActive
-            ? 'bg-primary text-primary-foreground shadow-sm'
-            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-        )
-      }
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      <span>{label}</span>
-    </NavLink>
   )
 }
 
@@ -101,9 +79,11 @@ function UserAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   )
 }
 
-function Sidebar() {
+// ─── Barra superior — substitui a sidebar vertical no desktop ─
+function TopNav() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const { data: profile } = useQuery({
     queryKey: queryKeys.profiles.me(user?.id ?? ''),
@@ -127,53 +107,73 @@ function Sidebar() {
   const name = profile?.display_name ?? user?.user_metadata?.full_name ?? 'Minha conta'
 
   return (
-    <aside className="hidden md:flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-card border-r border-border">
-      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-border">
-        <div className="flex-1 min-w-0">
-          <RaxoLogo height={28} />
-        </div>
-        <NotificationBell />
+    <header className="hidden md:flex items-center gap-4 px-6 py-3 border-b border-border bg-card sticky top-0 z-40">
+      <div className="shrink-0">
+        <RaxoLogo height={26} />
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+      <nav className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
         {navItems.map((item) => (
-          <NavItem key={item.to} {...item} />
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            className={({ isActive }) =>
+              cn('shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground')
+            }
+          >
+            <item.icon className="h-3.5 w-3.5 shrink-0" />
+            {item.label}
+          </NavLink>
         ))}
       </nav>
 
-      <div className="p-3 border-t border-border">
-        <NavLink
-          to="/profile"
-          className={({ isActive }) =>
-            cn('flex items-center gap-3 p-2 rounded-lg transition-colors',
-              isActive ? 'bg-secondary' : 'hover:bg-secondary')
-          }
-        >
-          <UserAvatar size="md" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-          </div>
-        </NavLink>
-        <div className="flex items-center gap-2 mt-1">
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 justify-start text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <ThemeToggle />
+        <NotificationBell />
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center rounded-full hover:bg-secondary p-0.5 transition-colors"
           >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
+            <UserAvatar size="sm" />
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg p-2 z-50 animate-fade-in">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium truncate">{name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+                <NavLink
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-secondary transition-colors"
+                >
+                  Perfil
+                </NavLink>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Sair
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </aside>
+    </header>
   )
 }
 
 function MobileBottomNav() {
-  const [showMore, setShowMore] = useMobileMenuState(false)
+  const [showMore, setShowMore] = useState(false)
   return (
     <>
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 px-2 pb-safe">
@@ -240,19 +240,16 @@ export function AppShell({ children }: AppShellProps) {
   const isMobile = useIsMobile()
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        {isMobile && <MobileHeader />}
-        <main className={cn('flex-1 px-4 py-5 md:px-6 md:py-6', isMobile && 'pb-24')}>
-          {children}
-        </main>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <TopNav />
+      {isMobile && <MobileHeader />}
+      <main className={cn('flex-1 w-full max-w-[1400px] mx-auto px-4 py-5 md:px-6 md:py-6', isMobile && 'pb-24')}>
+        {children}
+      </main>
       <MobileBottomNav />
     </div>
   )
 }
-
 
 // ─── Theme Toggle ─────────────────────────────────────────────
 function ThemeToggle() {
