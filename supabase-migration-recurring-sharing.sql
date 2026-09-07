@@ -67,16 +67,26 @@ exception when duplicate_object then null; end $$;
 -- ─── recurring_transactions: amigo vê a recorrência compartilhada ─
 -- (assume que já existe a policy padrão "for all using auth.uid() = user_id"
 -- pro dono, igual às outras tabelas do projeto — esta é só a policy adicional)
+--
+-- Usa uma função SECURITY DEFINER em vez de correlacionar direto com
+-- recurring_transaction_shares: essa tabela tem uma policy que consulta
+-- recurring_transactions de volta, e uma correlação direta nos dois
+-- sentidos cria referência circular de RLS (estoura limite de recursão
+-- no Postgres e derruba TODO select em recurring_transactions).
+create or replace function public.recurring_shared_with_me(rec_id uuid, uid uuid)
+returns boolean language sql security definer stable
+set search_path = 'public'
+as $$
+  select exists (
+    select 1 from public.recurring_transaction_shares s
+    where s.recurring_id = rec_id and s.shared_with_user_id = uid
+  );
+$$;
+
 do $$ begin
   create policy "Amigo vê recorrência compartilhada com ele"
     on public.recurring_transactions for select
-    using (
-      exists (
-        select 1 from public.recurring_transaction_shares s
-        where s.recurring_id = recurring_transactions.id
-        and s.shared_with_user_id = auth.uid()
-      )
-    );
+    using (public.recurring_shared_with_me(id, auth.uid()));
 exception when duplicate_object then null; end $$;
 
 -- ─── transactions: dono da recorrência apaga futuras (inclusive as do amigo) ─
@@ -104,16 +114,24 @@ exception when duplicate_object then null; end $$;
 -- de hoje) porque não existe policy de SELECT que permita ao amigo ler a
 -- transação do dono antes de aprovar — o select vinha sempre null. Numa
 -- recorrência isso quebraria "um lançamento por mês na data certa".
+--
+-- Mesma ressalva da policy de recurring_transactions acima: usa uma função
+-- SECURITY DEFINER pra evitar referência circular com shared_transactions
+-- (que já tem uma policy consultando transactions de volta).
+create or replace function public.is_shared_with_me(tx_id uuid, uid uuid)
+returns boolean language sql security definer stable
+set search_path = 'public'
+as $$
+  select exists (
+    select 1 from public.shared_transactions st
+    where st.transaction_id = tx_id and st.shared_with_user_id = uid
+  );
+$$;
+
 do $$ begin
   create policy "Amigo lê transação que compartilharam com ele"
     on public.transactions for select
-    using (
-      exists (
-        select 1 from public.shared_transactions st
-        where st.transaction_id = transactions.id
-        and st.shared_with_user_id = auth.uid()
-      )
-    );
+    using (public.is_shared_with_me(id, auth.uid()));
 exception when duplicate_object then null; end $$;
 
 -- ─── Hardening: valida recurring_id antes de gravar em transactions ────
