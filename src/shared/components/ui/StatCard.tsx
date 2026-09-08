@@ -13,12 +13,17 @@ interface StatCardProps {
   isCount?: boolean
   trend?: number[]       // série pra sparkline opcional (ex: últimos 7 dias)
   trendColor?: string
+  delta?: number | null  // variação % vs período anterior — badge neutro, só mostra direção
+  deltaCaption?: string  // legenda abaixo do valor (ex: "vs. mês passado")
 }
 
-// Stat card com barra de acento no topo — usado em Dashboard, Analytics e Planejamento.
+// Stat card com barra de acento no topo — usado em Home, Analytics e Planejamento.
 export function StatCard({
-  label, value, icon: Icon, accentColor, valueColor, iconBg, loading, isCount = false, trend, trendColor,
+  label, value, icon: Icon, accentColor, valueColor, iconBg, loading, isCount = false,
+  trend, trendColor, delta, deltaCaption,
 }: StatCardProps) {
+  const showDelta = delta !== undefined && delta !== null && Math.abs(delta) >= 1
+
   return (
     <div className="stat-card animate-fade-in">
       {/* Barra de acento no topo — usa margem negativa para não quebrar o padding do card */}
@@ -30,14 +35,26 @@ export function StatCard({
         </div>
       </div>
       {loading ? <Skeleton className="h-8 w-32" /> : (
-        <div className="flex items-end justify-between gap-2">
-          <p className={cn('text-2xl font-display font-bold tracking-tight', valueColor)}>
-            {isCount ? value : formatCurrency(value)}
-          </p>
-          {trend && trend.length > 1 && (
-            <Sparkline data={trend} color={trendColor ?? 'currentColor'} className={cn('mb-1', valueColor)} />
+        <>
+          <div className="flex items-end justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <p className={cn('text-2xl font-display font-bold tracking-tight', valueColor)}>
+                {isCount ? value : formatCurrency(value)}
+              </p>
+              {showDelta && (
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[11px] font-semibold text-foreground">
+                  {delta! >= 0 ? '↑' : '↓'} {Math.abs(delta!).toFixed(0)}%
+                </span>
+              )}
+            </div>
+            {trend && trend.length > 1 && (
+              <Sparkline data={trend} color={trendColor ?? 'currentColor'} className={cn('mb-1', valueColor)} />
+            )}
+          </div>
+          {deltaCaption && (
+            <p className="text-xs text-muted-foreground mt-0.5">{deltaCaption}</p>
           )}
-        </div>
+        </>
       )}
     </div>
   )
