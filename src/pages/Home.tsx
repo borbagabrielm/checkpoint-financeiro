@@ -65,6 +65,28 @@ export default function HomePage() {
   const expenseDelta = pctDelta(currentMonthStats?.expense, prevMonthStats?.expense)
   const balanceDelta = pctDelta(currentMonthStats?.balance, prevMonthStats?.balance)
 
+  const buildCaption = (curr?: number, prev?: number) => {
+    if (curr === undefined || prev === undefined) return undefined
+    const diff = curr - prev
+    if (Math.abs(diff) < 0.5) return undefined
+    return `${diff >= 0 ? '↗' : '↘'} ${formatCurrency(Math.abs(diff))} ${diff >= 0 ? 'a mais' : 'a menos'} que ${getMonthLabel(prevMonthKey)}`
+  }
+  const incomeCaption = buildCaption(currentMonthStats?.income, prevMonthStats?.income)
+  const expenseCaption = buildCaption(currentMonthStats?.expense, prevMonthStats?.expense)
+  const balanceCaption = buildCaption(currentMonthStats?.balance, prevMonthStats?.balance)
+
+  // Janela de 6 meses (3 pra trás + atual + 2 pra frente) pro mini gráfico de barras
+  const currentIdx = monthlyStats.findIndex((m) => m.month === currentMonthKey)
+  const windowStart = currentIdx >= 0 ? Math.max(0, currentIdx - 3) : Math.max(0, monthlyStats.length - 6)
+  const trendWindow = monthlyStats.slice(windowStart, windowStart + 6)
+  const trendHighlightIndex = currentIdx >= 0 ? currentIdx - windowStart : trendWindow.length - 1
+
+  const barPctFor = (key: 'income' | 'expense' | 'balance') => {
+    const max = Math.max(...trendWindow.map((m) => Math.abs(m[key])), 1)
+    const current = currentMonthStats?.[key] ?? 0
+    return Math.max(0, (current / max) * 100)
+  }
+
   // Metas — progresso agregado (não escopado ao mês, é o total guardado até agora)
   const totalGuardado = goals.reduce((s, g) => s + g.current_amount, 0)
   const avgGoalsPct = goals.length
@@ -186,9 +208,13 @@ export default function HomePage() {
           valueColor="text-[hsl(var(--income))]"
           iconBg="bg-[hsl(var(--income-fill)/0.15)]"
           loading={isLoading}
-          trend={monthlyStats.map((m) => m.income)}
           delta={incomeDelta}
-          deltaCaption="vs. mês passado"
+          caption={incomeCaption}
+          barPct={barPctFor('income')}
+          barColor="hsl(var(--income))"
+          trendBars={trendWindow.map((m) => ({ label: m.label, value: m.income }))}
+          trendHighlightIndex={trendHighlightIndex}
+          trendHighlightLabel={incomeDelta !== null ? `${incomeDelta >= 0 ? '+' : ''}${incomeDelta.toFixed(0)}%` : undefined}
         />
         <StatCard
           label="Despesas"
@@ -198,9 +224,13 @@ export default function HomePage() {
           valueColor="text-[hsl(var(--expense))]"
           iconBg="bg-[hsl(var(--expense)/0.12)]"
           loading={isLoading}
-          trend={monthlyStats.map((m) => m.expense)}
           delta={expenseDelta}
-          deltaCaption="vs. mês passado"
+          caption={expenseCaption}
+          barPct={barPctFor('expense')}
+          barColor="hsl(var(--expense))"
+          trendBars={trendWindow.map((m) => ({ label: m.label, value: m.expense }))}
+          trendHighlightIndex={trendHighlightIndex}
+          trendHighlightLabel={expenseDelta !== null ? `${expenseDelta >= 0 ? '+' : ''}${expenseDelta.toFixed(0)}%` : undefined}
         />
         <StatCard
           label="Saldo"
@@ -210,9 +240,13 @@ export default function HomePage() {
           valueColor={summary.balance >= 0 ? 'text-[#3B3BFF]' : 'text-[hsl(var(--expense))]'}
           iconBg="bg-primary/10"
           loading={isLoading}
-          trend={monthlyStats.map((m) => m.balance)}
           delta={balanceDelta}
-          deltaCaption="vs. mês passado"
+          caption={balanceCaption}
+          barPct={barPctFor('balance')}
+          barColor="#3B3BFF"
+          trendBars={trendWindow.map((m) => ({ label: m.label, value: m.balance }))}
+          trendHighlightIndex={trendHighlightIndex}
+          trendHighlightLabel={balanceDelta !== null ? `${balanceDelta >= 0 ? '+' : ''}${balanceDelta.toFixed(0)}%` : undefined}
         />
       </div>
 
